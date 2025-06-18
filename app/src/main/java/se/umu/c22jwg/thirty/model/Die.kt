@@ -1,10 +1,10 @@
 package se.umu.c22jwg.thirty.model
 
 class Die {
-    private var value: Int = 0;
+    var value: Int = 1;
+    var selected = false;
 
-    fun roll(): Int {
+    fun roll() {
         value = (1..6).random();
-        return value;
     }
 }
