@@ -35,10 +35,18 @@ class GameFragment : Fragment() {
         viewModel.dice.observe(viewLifecycleOwner) { diceList ->
             updateDiceImages(diceList)
         }
+        // Observe score changes
+        viewModel.round.observe(viewLifecycleOwner) { round ->
+            binding.RoundNum?.text = getString(R.string.round_text, round);
+        }
+        // Observe roll changes
+        viewModel.roll.observe(viewLifecycleOwner) { roll ->
+            binding.RollNum?.text = getString(R.string.roll_text, roll);
+        }
 
         // Set up submit button click listener
         binding.submitScoreButton.setOnClickListener {
-            viewModel.rollSelectedDice()
+            viewModel.handleRoll()
             animateRolledDice(viewModel.dice.value ?: emptyList())
         }
     }
@@ -77,7 +85,7 @@ class GameFragment : Fragment() {
         )
 
         dice.forEachIndexed { index, die ->
-            if (!die.selected) return@forEachIndexed
+            if (die.selected) return@forEachIndexed
 
             val dieImageView = diceImages[index]
             val imageResId = getImageResId(die.value)

@@ -28,7 +28,14 @@ class DieSet {
             }
         }
     }
-
+    // Roll the dice that are not selected in the set
+    fun rollOtherDice() {
+        for (die in diceSet) {
+            if (!die.selected) {
+                die.roll();
+                }
+            }
+        }
     // Toggle selection of a die at a given index
     fun toggleSelected(index: Int) {
         if (index in diceSet.indices) {
