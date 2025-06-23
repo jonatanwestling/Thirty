@@ -8,11 +8,12 @@ import se.umu.c22jwg.thirty.model.DieSet
 
 class GameViewModel: ViewModel() {
     private val dieSet = DieSet();
-    private var round = 0;
+    private var round = 1;
     private val _dice = MutableLiveData(dieSet.getDiceSet)
     val dice: LiveData<List<Die>> = _dice
 
     fun rollDice() {
+
         dieSet.rollDice();
         _dice.value = dieSet.getDiceSet;
     }
