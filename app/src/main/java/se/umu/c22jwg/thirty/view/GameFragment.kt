@@ -44,10 +44,19 @@ class GameFragment : Fragment() {
             binding.RollNum?.text = getString(R.string.roll_text, roll);
         }
 
+        viewModel.rollButtonEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.rollButton?.isEnabled = enabled
+        }
+
         // Set up submit button click listener
-        binding.submitScoreButton.setOnClickListener {
+        binding.rollButton?.setOnClickListener {
             viewModel.handleRoll()
             animateRolledDice(viewModel.dice.value ?: emptyList())
+        }
+
+        // Set up the next button click listener
+        binding.nextButton?.setOnClickListener {
+            viewModel.handleNext();
         }
     }
 

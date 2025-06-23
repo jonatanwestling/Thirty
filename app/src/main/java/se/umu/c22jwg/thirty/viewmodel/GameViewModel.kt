@@ -23,9 +23,9 @@ class GameViewModel: ViewModel() {
     // Live data for roll button disable/activated state
     private val _rollButtonEnabled = MutableLiveData(true)
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
+
     fun handleRoll() {
         val currentRoll = _roll.value ?: 1
-        val currentRound = _round.value ?: 1
 
         if (currentRoll < 3) {
             // First or second roll
@@ -38,6 +38,7 @@ class GameViewModel: ViewModel() {
             _roll.value = currentRoll + 1
             } else {
                 // Third roll
+                _rollButtonEnabled.value = false
                 if (dieSet.getSelected().contains(true)) {
                     rollSelectedDice()
                 } else {
@@ -45,10 +46,23 @@ class GameViewModel: ViewModel() {
                     rollDice()
                 }
                 _roll.value = 1
-                _round.value = currentRound + 1
-                resetSelection()
+
         }
 
+    }
+
+    fun handleNext(){
+        // TODO: Call score class to check score
+        // go to the next round
+        var currentRound = _round.value ?: 1
+        if (currentRound < 10) {
+            _round.value = currentRound + 1
+            // then reset the selection
+            resetSelection();
+        } else {
+            //handle game over here
+            _round.value = 1;
+        }
     }
 
     fun rollDice() {
@@ -70,6 +84,7 @@ class GameViewModel: ViewModel() {
     fun resetSelection() {
         dieSet.resetSelection();
         _dice.value = dieSet.getDiceSet;
+        _rollButtonEnabled.value = true;
     }
 
     fun rollSelectedDice() {
