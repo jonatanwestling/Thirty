@@ -7,83 +7,12 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <GridLayout
-        android:id="@+id/diceGrid"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:alignmentMode="alignMargins"
-        android:columnCount="3"
-        android:rowCount="2"
-        android:useDefaultMargins="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-            android:id="@+id/die1Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_1"
-            android:contentDescription="@string/die_face_1" />
-
-        <ImageView
-            android:id="@+id/die2Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_2"
-            android:contentDescription="@string/die_face_1" />
-
-        <ImageView
-            android:id="@+id/die3Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_3"
-            android:contentDescription="@string/die_face_1" />
-
-        <ImageView
-            android:id="@+id/die4Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_4"
-            android:contentDescription="@string/die_face_1" />
-
-        <ImageView
-            android:id="@+id/die5Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_5"
-            android:contentDescription="@string/die_face_1" />
-
-        <ImageView
-            android:id="@+id/die6Image"
-            style="@style/DieImageStyle"
-            android:src="@drawable/die_6"
-            android:contentDescription="@string/die_face_1" />
-
-         </GridLayout>
-
-    <LinearLayout
-        android:id="@+id/bottomContainer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <Spinner
-            android:id="@+id/scoreSpinner"
-            android:layout_width="132dp"
-            android:layout_height="39dp"
-            android:layout_marginEnd="16dp"
-            android:entries="@array/score_options" />
-
-        <Button
-            android:id="@+id/submitScoreButton"
-            android:layout_width="124dp"
-            android:layout_height="wrap_content"
-            android:text="@string/roll" />
-    </LinearLayout>
-
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:navGraph="@navigation/nav_graph"
+        app:defaultNavHost="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

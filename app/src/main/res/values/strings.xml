@@ -2,6 +2,7 @@
     <string name="app_name">Thirty</string>
     <string name="die_face_1">Die face 1</string>
     <string name="roll">Roll</string>
+    <string name="start_game">Start Game</string>
     <string-array name="score_options">
         <item>Low</item>
         <item>4</item>

@@ -13,7 +13,11 @@ class GameViewModel: ViewModel() {
     val dice: LiveData<List<Die>> = _dice
 
     fun rollDice() {
-
+        //check if there are any selected dice
+        if (dieSet.getSelected().contains(true)) {
+            rollSelectedDice();
+            return;
+        }
         dieSet.rollDice();
         _dice.value = dieSet.getDiceSet;
     }
