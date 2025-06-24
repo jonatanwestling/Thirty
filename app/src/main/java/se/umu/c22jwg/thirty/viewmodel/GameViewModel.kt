@@ -7,10 +7,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.model.DieSet
+import se.umu.c22jwg.thirty.model.ScoreBoard
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     private val allChoices = listOf("Low", "4", "5", "6", "7", "8", "9", "10", "11", "12")
     private val dieSet = DieSet()
+
+    // Store the scoreboard in the state
+    val scoreBoard: LiveData<ScoreBoard> = state.getLiveData("scoreBoard", ScoreBoard())
 
     // LiveData and state handling for important game data
     val round: LiveData<Int> = state.getLiveData("round", 1)
@@ -112,4 +116,11 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         dieSet.rollOtherDice()
         _dice.value = dieSet.getDiceSet
     }
+
+    fun addScoreToBoard(choice: String, score: Int) {
+        val board = state["scoreBoard"] ?: ScoreBoard()
+        board.addScore(choice, score)
+        state["scoreBoard"] = board
+    }
+
 }
