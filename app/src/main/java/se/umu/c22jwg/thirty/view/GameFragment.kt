@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.observe
 import se.umu.c22jwg.thirty.R
 import se.umu.c22jwg.thirty.databinding.FragmentGameBinding
 import se.umu.c22jwg.thirty.model.Die
@@ -36,7 +38,7 @@ class GameFragment : Fragment() {
         viewModel.dice.observe(viewLifecycleOwner) { diceList ->
             updateDiceImages(diceList)
         }
-        // Observe score changes
+        // Observe round changes
         viewModel.round.observe(viewLifecycleOwner) { round ->
             binding.RoundNum?.text = getString(R.string.round_text, round);
         }
@@ -55,6 +57,12 @@ class GameFragment : Fragment() {
             } else {
                 binding.nextButton?.text = getString(R.string.next_text)
             }
+        }
+
+        viewModel.remainingChoices.observe(viewLifecycleOwner) { choices ->
+            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, choices)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.scoreSpinner.adapter = adapter
         }
 
         // Observe navigation event
@@ -76,7 +84,7 @@ class GameFragment : Fragment() {
             if (viewModel.showFinish.value == true) {
                 viewModel.handleFinish()
             } else {
-                viewModel.handleNext()
+                viewModel.handleNext(binding.scoreSpinner.selectedItem.toString())
             }
         }
 

@@ -9,14 +9,18 @@ import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.model.DieSet
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
-
+    private val allChoices = listOf("Low", "4", "5", "6", "7", "8", "9", "10", "11", "12")
     private val dieSet = DieSet()
 
+    // LiveData and state handling for important game data
     val round: LiveData<Int> = state.getLiveData("round", 1)
     val roll: LiveData<Int> = state.getLiveData("roll", 1)
     val score: LiveData<Int> = state.getLiveData("score", 0)
     val showFinish: LiveData<Boolean> = state.getLiveData("showFinish", false)
     val navigateToResult: LiveData<Boolean> = state.getLiveData("navigateToResult", false)
+    val remainingChoices: LiveData<MutableList<String>> =
+        state.getLiveData("remainingChoices", allChoices.toMutableList())
+
 
     private val _rollButtonEnabled = MutableLiveData(true)
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
@@ -47,7 +51,14 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         }
     }
 
-    fun handleNext() {
+    fun handleNext(selectedChoice: String) {
+        // TODO Calculate score based on selected choice
+
+        //Remove the selected choice from the remaining choices list
+        val currentList = state.get<MutableList<String>>("remainingChoices") ?: return
+        currentList.remove(selectedChoice)
+        state["remainingChoices"] = currentList
+
         val currentRound = round.value ?: 1
         if (currentRound < 10) {
             if (currentRound == 9) {
