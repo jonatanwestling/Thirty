@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.model.DieSet
+import android.util.Log
 
 class GameViewModel: ViewModel() {
     private val dieSet = DieSet();
@@ -23,6 +24,10 @@ class GameViewModel: ViewModel() {
     // Live data for roll button disable/activated state
     private val _rollButtonEnabled = MutableLiveData(true)
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
+    private val _showFinish = MutableLiveData(false)
+    val showFinish: LiveData<Boolean> = _showFinish
+    private val _navigateToResult = MutableLiveData(false)
+    val navigateToResult: LiveData<Boolean> = _navigateToResult
 
     fun handleRoll() {
         val currentRoll = _roll.value ?: 1
@@ -56,11 +61,18 @@ class GameViewModel: ViewModel() {
         // go to the next round
         var currentRound = _round.value ?: 1
         if (currentRound < 10) {
+            if (currentRound == 9) {
+                // the last round, change next button to finish
+                _showFinish.value = true;
+            }
             _round.value = currentRound + 1
             // then reset the selection
             resetSelection();
         } else {
-            //handle game over here
+            //handle game over her
+            Log.d("GameViewModel", "Game over!")
+            _score.value = 0;
+            _showFinish.value = false;
             _round.value = 1;
         }
     }
@@ -95,5 +107,14 @@ class GameViewModel: ViewModel() {
     fun rollOtherDice() {
         dieSet.rollOtherDice();
         _dice.value = dieSet.getDiceSet;
+    }
+
+    fun handleFinish() {
+        // Any finish logic can go here
+        _navigateToResult.value = true
+    }
+
+    fun onNavigatedToResult() {
+        _navigateToResult.value = false
     }
 }

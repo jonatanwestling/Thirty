@@ -14,6 +14,7 @@ import se.umu.c22jwg.thirty.R
 import se.umu.c22jwg.thirty.databinding.FragmentGameBinding
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.viewmodel.GameViewModel
+import androidx.navigation.fragment.findNavController
 
 class GameFragment : Fragment() {
     private var _binding: FragmentGameBinding? = null
@@ -48,6 +49,22 @@ class GameFragment : Fragment() {
             binding.rollButton?.isEnabled = enabled
         }
 
+        viewModel.showFinish.observe(viewLifecycleOwner) { show ->
+            if (show) {
+                binding.nextButton?.text = getString(R.string.finish_text)
+            } else {
+                binding.nextButton?.text = getString(R.string.next_text)
+            }
+        }
+
+        // Observe navigation event
+        viewModel.navigateToResult.observe(viewLifecycleOwner) { shouldNavigate ->
+            if (shouldNavigate) {
+                    findNavController().navigate(R.id.action_gameFragment_to_resultFragment)
+                viewModel.onNavigatedToResult()
+            }
+        }
+
         // Set up submit button click listener
         binding.rollButton?.setOnClickListener {
             viewModel.handleRoll()
@@ -56,8 +73,13 @@ class GameFragment : Fragment() {
 
         // Set up the next button click listener
         binding.nextButton?.setOnClickListener {
-            viewModel.handleNext();
+            if (viewModel.showFinish.value == true) {
+                viewModel.handleFinish()
+            } else {
+                viewModel.handleNext()
+            }
         }
+
     }
 
     private fun updateDiceImages(dice: List<Die>) {
