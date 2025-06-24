@@ -17,5 +17,18 @@
         android:id="@+id/gameFragment"
         android:name="se.umu.c22jwg.thirty.view.GameFragment"
         android:label="fragment_game"
-        tools:layout="@layout/fragment_game" />
+        tools:layout="@layout/fragment_game" >
+        <action
+            android:id="@+id/action_gameFragment_to_resultFragment"
+            app:destination="@id/resultFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/resultFragment"
+        android:name="se.umu.c22jwg.thirty.view.ResultFragment"
+        android:label="fragment_result"
+        tools:layout="@layout/fragment_result" >
+        <action
+            android:id="@+id/action_resultFragment_to_startFragment2"
+            app:destination="@id/startFragment" />
+    </fragment>
 </navigation>

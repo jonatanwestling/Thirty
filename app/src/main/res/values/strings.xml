@@ -8,6 +8,10 @@
     <string name="score">Score</string>
     <string name="next">Next</string>
     <string name="round">Round</string>
+    <string name="finish_text">Finish</string>
+    <string name="next_text">Next</string>
+    <string name="results">Results</string>
+    <string name="main_menu">Main Menu</string>
     <string-array name="score_options">
         <item>Low</item>
         <item>4</item>
