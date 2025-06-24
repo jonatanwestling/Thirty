@@ -1,120 +1,104 @@
 package se.umu.c22jwg.thirty.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.model.DieSet
-import android.util.Log
 
-class GameViewModel: ViewModel() {
-    private val dieSet = DieSet();
-    // LiveData for the dice
-    private val _dice = MutableLiveData(dieSet.getDiceSet)
-    val dice: LiveData<List<Die>> = _dice
-    // LiveData for the round
-    private val _round = MutableLiveData(1)
-    val round: LiveData<Int> = _round
-    // LiveData for the roll
-    private val _roll = MutableLiveData(1)
-    val roll: LiveData<Int> = _roll
-    // LiveData for the score
-    private val _score = MutableLiveData(0)
-    val score: LiveData<Int> = _score
-    // Live data for roll button disable/activated state
+class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
+
+    private val dieSet = DieSet()
+
+    val round: LiveData<Int> = state.getLiveData("round", 1)
+    val roll: LiveData<Int> = state.getLiveData("roll", 1)
+    val score: LiveData<Int> = state.getLiveData("score", 0)
+    val showFinish: LiveData<Boolean> = state.getLiveData("showFinish", false)
+    val navigateToResult: LiveData<Boolean> = state.getLiveData("navigateToResult", false)
+
     private val _rollButtonEnabled = MutableLiveData(true)
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
-    private val _showFinish = MutableLiveData(false)
-    val showFinish: LiveData<Boolean> = _showFinish
-    private val _navigateToResult = MutableLiveData(false)
-    val navigateToResult: LiveData<Boolean> = _navigateToResult
+
+    private val _dice = MutableLiveData(dieSet.getDiceSet)
+    val dice: LiveData<List<Die>> = _dice
 
     fun handleRoll() {
-        val currentRoll = _roll.value ?: 1
+        val currentRoll = roll.value ?: 1
 
         if (currentRoll < 3) {
             // First or second roll
             if (dieSet.getSelected().contains(true)) {
                 rollOtherDice()
             } else {
-                // None selected, roll all dice
                 rollDice()
             }
-            _roll.value = currentRoll + 1
+            state["roll"] = currentRoll + 1
+        } else {
+            // Third roll
+            _rollButtonEnabled.value = false
+            if (dieSet.getSelected().contains(true)) {
+                rollSelectedDice()
             } else {
-                // Third roll
-                _rollButtonEnabled.value = false
-                if (dieSet.getSelected().contains(true)) {
-                    rollSelectedDice()
-                } else {
-                    // None selected, roll all dice
-                    rollDice()
-                }
-                _roll.value = 1
-
+                rollDice()
+            }
+            state["roll"] = 1
         }
-
     }
 
-    fun handleNext(){
-        // TODO: Call score class to check score
-        // go to the next round
-        var currentRound = _round.value ?: 1
+    fun handleNext() {
+        val currentRound = round.value ?: 1
         if (currentRound < 10) {
             if (currentRound == 9) {
-                // the last round, change next button to finish
-                _showFinish.value = true;
+                state["showFinish"] = true
             }
-            _round.value = currentRound + 1
-            // then reset the selection
-            resetSelection();
+            state["round"] = currentRound + 1
+            resetSelection()
         } else {
-            //handle game over her
+            // Game over
             Log.d("GameViewModel", "Game over!")
-            _score.value = 0;
-            _showFinish.value = false;
-            _round.value = 1;
+            state["score"] = 0
+            state["showFinish"] = false
+            state["round"] = 1
         }
-    }
-
-    fun rollDice() {
-        //check if there are any selected dice
-        if (dieSet.getSelected().contains(true)) {
-            rollOtherDice();
-            return;
-        }
-        dieSet.rollDice();
-        _dice.value = dieSet.getDiceSet;
-
-    }
-
-    fun toggleSelected(index: Int) {
-        dieSet.toggleSelected(index);
-        _dice.value = dieSet.getDiceSet;
-    }
-
-    fun resetSelection() {
-        dieSet.resetSelection();
-        _dice.value = dieSet.getDiceSet;
-        _rollButtonEnabled.value = true;
-    }
-
-    fun rollSelectedDice() {
-        dieSet.rollSelectedDice();
-        _dice.value = dieSet.getDiceSet;
-    }
-
-    fun rollOtherDice() {
-        dieSet.rollOtherDice();
-        _dice.value = dieSet.getDiceSet;
     }
 
     fun handleFinish() {
-        // Any finish logic can go here
-        _navigateToResult.value = true
+        state["navigateToResult"] = true
     }
 
     fun onNavigatedToResult() {
-        _navigateToResult.value = false
+        state["navigateToResult"] = false
+    }
+
+    fun toggleSelected(index: Int) {
+        dieSet.toggleSelected(index)
+        _dice.value = dieSet.getDiceSet
+    }
+
+    fun resetSelection() {
+        dieSet.resetSelection()
+        _dice.value = dieSet.getDiceSet
+        _rollButtonEnabled.value = true
+    }
+
+    fun rollDice() {
+        if (dieSet.getSelected().contains(true)) {
+            rollOtherDice()
+            return
+        }
+        dieSet.rollDice()
+        _dice.value = dieSet.getDiceSet
+    }
+
+    fun rollSelectedDice() {
+        dieSet.rollSelectedDice()
+        _dice.value = dieSet.getDiceSet
+    }
+
+    fun rollOtherDice() {
+        dieSet.rollOtherDice()
+        _dice.value = dieSet.getDiceSet
     }
 }
