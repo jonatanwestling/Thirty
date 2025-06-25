@@ -18,25 +18,31 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
 
     // LiveData and state handling for important game data
     val round: LiveData<Int> = state.getLiveData("round", 1)
-    val roll: LiveData<Int> = state.getLiveData("roll", 1)
+    val roll: LiveData<Int> = state.getLiveData("roll", 0)
     val score: LiveData<Int> = state.getLiveData("score", 0)
     val showFinish: LiveData<Boolean> = state.getLiveData("showFinish", false)
     val navigateToResult: LiveData<Boolean> = state.getLiveData("navigateToResult", false)
     val remainingChoices: LiveData<MutableList<String>> =
         state.getLiveData("remainingChoices", allChoices.toMutableList())
 
-
+    // LiveData that we don't need to save in the state
     private val _rollButtonEnabled = MutableLiveData(true)
+    private val _isDieSelectionEnabled = MutableLiveData(false)
+    val isDieSelectionEnabled: LiveData<Boolean> = _isDieSelectionEnabled
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
 
     private val _dice = MutableLiveData(dieSet.getDiceSet)
     val dice: LiveData<List<Die>> = _dice
 
     fun handleRoll() {
-        val currentRoll = roll.value ?: 1
+        val currentRoll = roll.value ?: 0
 
-        if (currentRoll < 3) {
+        if (currentRoll < 2) {
             // First or second roll
+            if (currentRoll == 0){
+                // Now we can enable the die selection
+                _isDieSelectionEnabled.value = true
+            }
             if (dieSet.getSelected().contains(true)) {
                 rollOtherDice()
             } else {
@@ -47,15 +53,27 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             // Third roll
             _rollButtonEnabled.value = false
             if (dieSet.getSelected().contains(true)) {
-                rollSelectedDice()
+                rollOtherDice()
             } else {
                 rollDice()
             }
-            state["roll"] = 1
+            // Increment roll so it says 3/3
+            state["roll"] = currentRoll + 1
         }
     }
 
+    /**
+     * Handle the next press meaning the user want to register the current choice and move to the
+     * next round. This function call helper functions to calculate the score and update the all
+     * relevant data.
+     *
+     * @param selectedChoice The choice the user made
+     * @return Nothing
+     */
     fun handleNext(selectedChoice: String) {
+        //Reset the roll count and die selection
+        state["roll"] = 0
+        _isDieSelectionEnabled.value = false
         // TODO Calculate score based on selected choice
 
         //Remove the selected choice from the remaining choices list
