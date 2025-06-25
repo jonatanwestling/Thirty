@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -22,6 +23,7 @@ class GameFragment : Fragment() {
     private var _binding: FragmentGameBinding? = null
     private val binding get() = _binding!!
     private val viewModel: GameViewModel by viewModels()
+    var dieSelectionEnabled = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,9 +48,13 @@ class GameFragment : Fragment() {
         viewModel.roll.observe(viewLifecycleOwner) { roll ->
             binding.RollNum?.text = getString(R.string.roll_text, roll);
         }
-
         viewModel.rollButtonEnabled.observe(viewLifecycleOwner) { enabled ->
             binding.rollButton?.isEnabled = enabled
+        }
+
+
+        viewModel.isDieSelectionEnabled.observe(viewLifecycleOwner) {
+            dieSelectionEnabled = it
         }
 
         viewModel.showFinish.observe(viewLifecycleOwner) { show ->
@@ -108,7 +114,13 @@ class GameFragment : Fragment() {
             dieImageView.alpha = if (die.selected) 0.5f else 1.0f
 
             dieImageView.setOnClickListener {
-                viewModel.toggleSelected(index)
+                if (dieSelectionEnabled) {
+                    viewModel.toggleSelected(index)
+                }else {
+                    Toast.makeText(requireContext(),
+                        "You must roll the dice before selecting!",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
