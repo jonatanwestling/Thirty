@@ -58,6 +58,9 @@ class GameFragment : Fragment() {
         viewModel.rollButtonEnabled.observe(viewLifecycleOwner) { enabled ->
             binding.rollButton?.isEnabled = enabled
         }
+        viewModel.nextButtonEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.nextButton?.isEnabled = enabled
+        }
         viewModel.isDieSelectionEnabled.observe(viewLifecycleOwner) {
             dieSelectionEnabled = it
         }

@@ -20,6 +20,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     val round: LiveData<Int> = state.getLiveData("round", 1)
     val roll: LiveData<Int> = state.getLiveData("roll", 0)
     val score: LiveData<Int> = state.getLiveData("score", 0)
+    val rollButtonEnabled: LiveData<Boolean> = state.getLiveData("rollButtonEnabled", true)
     val showFinish: LiveData<Boolean> = state.getLiveData("showFinish", false)
     val navigateToResult: LiveData<Boolean> = state.getLiveData("navigateToResult", false)
     val remainingChoices: LiveData<MutableList<String>> =
@@ -29,11 +30,12 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     private var selectedChoice: String = remainingChoices.value?.first() ?: ""
 
     // LiveData that we don't need to save in the state
-    private val _rollButtonEnabled = MutableLiveData(true)
+    private val _nextButtonEnabled = MutableLiveData(true);
+
     private val _isDieSelectionEnabled = MutableLiveData(roll.value != 0)
     val isDieSelectionEnabled: LiveData<Boolean> = _isDieSelectionEnabled
-    val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
 
+    val nextButtonEnabled: LiveData<Boolean> = _nextButtonEnabled
     private val _dice = MutableLiveData(dieSet.getDiceSet)
     val dice: LiveData<List<Die>> = _dice
 
@@ -60,7 +62,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             state["roll"] = currentRoll + 1
         } else {
             // Third roll
-            _rollButtonEnabled.value = false
+            state["rollButtonEnabled"] = false
             if (dieSet.getSelected().contains(true)) {
                 rollOtherDice()
             } else {
@@ -193,8 +195,8 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
                 break
             }
         }
-        // Return points if valid, null otherwise
-        return if (totalScore > 0) totalScore else null
+        // Return points if valid and no remaining dice
+        return if (selectedValues.isEmpty() && totalScore > 0) totalScore else null
     }
 
     /**
@@ -212,9 +214,13 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         if (score == null) {
             // Invalid selection, notify the user and disable next button
             Log.d("GameViewModel", "Invalid selection")
+            //disable the next button
+            _nextButtonEnabled.value = false
             return
 
         }
+        // Enable the next button
+        _nextButtonEnabled.value = true
         Log.d("GameViewModel", "Score: $score")
         state["score"] = score
     }
@@ -245,7 +251,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         dieSet.resetSelection()
         updateDiceState()
         calculateScore()
-        _rollButtonEnabled.value = true
+        state["rollButtonEnabled"] = true
     }
 
     fun rollDice() {
