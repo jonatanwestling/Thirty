@@ -13,7 +13,7 @@ import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.observe
 import se.umu.c22jwg.thirty.R
@@ -25,7 +25,7 @@ import androidx.navigation.fragment.findNavController
 class GameFragment : Fragment() {
     private var _binding: FragmentGameBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: GameViewModel by viewModels()
+    private val viewModel: GameViewModel by activityViewModels()
     var dieSelectionEnabled = false
 
     override fun onCreateView(
