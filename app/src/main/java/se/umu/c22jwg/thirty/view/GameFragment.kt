@@ -7,6 +7,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Adapter
+import android.widget.AdapterView
+import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -48,11 +51,13 @@ class GameFragment : Fragment() {
         viewModel.roll.observe(viewLifecycleOwner) { roll ->
             binding.RollNum?.text = getString(R.string.roll_text, roll);
         }
+        // Observe score changes
+        viewModel.score.observe(viewLifecycleOwner) { score ->
+            binding.ScoreNum?.text = "$score"
+        }
         viewModel.rollButtonEnabled.observe(viewLifecycleOwner) { enabled ->
             binding.rollButton?.isEnabled = enabled
         }
-
-
         viewModel.isDieSelectionEnabled.observe(viewLifecycleOwner) {
             dieSelectionEnabled = it
         }
@@ -90,7 +95,17 @@ class GameFragment : Fragment() {
             if (viewModel.showFinish.value == true) {
                 viewModel.handleFinish()
             } else {
-                viewModel.handleNext(binding.scoreSpinner.selectedItem.toString())
+                viewModel.handleNext()
+            }
+        }
+
+        // Update the viewmodel when the spinner item has changed
+        binding.scoreSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                val selectedChoice = parent.getItemAtPosition(position).toString()
+                viewModel.onSpinnerChoiceChanged(selectedChoice)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {
             }
         }
 
