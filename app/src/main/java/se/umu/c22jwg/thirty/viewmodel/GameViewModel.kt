@@ -25,6 +25,9 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     val remainingChoices: LiveData<MutableList<String>> =
         state.getLiveData("remainingChoices", allChoices.toMutableList())
 
+    // Init the selected choice to the first choice in the list
+    private var selectedChoice: String = remainingChoices.value?.first() ?: ""
+
     // LiveData that we don't need to save in the state
     private val _rollButtonEnabled = MutableLiveData(true)
     private val _isDieSelectionEnabled = MutableLiveData(roll.value != 0)
@@ -76,12 +79,12 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
      * @param selectedChoice The choice the user made
      * @return Nothing
      */
-    fun handleNext(selectedChoice: String) {
+    fun handleNext() {
         //Reset the roll count and die selection
         state["roll"] = 0
         _isDieSelectionEnabled.value = false
         // TODO Calculate score based on selected choice
-        calculateScore(selectedChoice)
+        calculateScore()
         Log.d("GameViewModel", "Selected choice: $selectedChoice")
         //Remove the selected choice from the remaining choices list
         val currentList = state.get<MutableList<String>>("remainingChoices") ?: return
@@ -125,30 +128,103 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
 
     }
 
-    fun getCombinationScore(choice: Int): Int {
-        return 23
+    /**
+     * Recursive helper function to find any combination of in remaining  that sums to target
+     * When a valid combination is found, it is added it gets stored in current.
+     *
+     * @param current, the current combination
+     * @param remaining, the remaining unused dice values
+     * @param target, the target sum selected by the player choice
+     * @return true if a valid combination is found, false otherwise
+     */
+    fun findCombination(current: MutableList<Int>, remaining: MutableList<Int>, target: Int): Boolean {
+        // Base case, valid combination
+        if (target == 0) return true
+        // Invalid case, no valid combination or remaining dice
+        if (target < 0 || remaining.isEmpty()) return false
+
+        // Iterate and check all remaining dice combinations
+        for (i in remaining.indices) {
+            //get the value and remove it from the list to make the recursive call
+            val value = remaining[i]
+            val newRemaining = remaining.toMutableList()
+            newRemaining.removeAt(i)
+            current.add(value)
+            //Check if the recursive call contains a valid combination
+            if (findCombination(current, newRemaining, target - value)) {
+                return true
+            }
+            // Backtrack to undo last step that did not lead to a valid combination
+            current.removeAt(current.size - 1)
+        }
+        // No valid combination found
+        return false
+    }
+    /**
+     * Calculate the score based on the selected choice and die. It
+     * checks if the user has made the correct choice and selected
+     * valid combinations.
+     *
+     * @param choice The choice the user made in the range of 4-12
+     * @return The score if valid, null otherwise
+     */
+    fun getCombinationScore(choice: Int): Int? {
+        // Get the values of the selected die
+        val selectedValues = dieSet.getDiceSet
+            .filter { it.selected }
+            .map { it.value }
+            .toMutableList()
+
+        // No die selected, 0 points
+        if (selectedValues.isEmpty()) return 0
+
+        var totalScore = 0
+        // Find all valid grouping combinations
+        while (true) {
+            val tempGroup = mutableListOf<Int>()
+            // Add the point each time a combination is found
+            if (findCombination(tempGroup, selectedValues, choice)) {
+                // Remove used dice
+                tempGroup.forEach { value ->
+                    selectedValues.remove(value)
+                }
+                totalScore += choice
+            } else {
+                break
+            }
+        }
+        // Return points if valid, null otherwise
+        return if (totalScore > 0) totalScore else null
     }
 
     /**
      * Calculate the score based on the selected choice and die
      */
-   fun calculateScore(choice: String){
-        val score = when (choice){
-            "Low" -> getLowScore()
-            "4" -> getCombinationScore(4)
-            "5" -> getCombinationScore(5)
-            "6" -> getCombinationScore(6)
-            "7" -> getCombinationScore(7)
-            "8" -> getCombinationScore(8)
-            "9" -> getCombinationScore(9)
-            "10" -> getCombinationScore(10)
-            "11" -> getCombinationScore(11)
-            "12" -> getCombinationScore(12)
-            else -> 0
+   fun calculateScore(){
+       // reset score
+       state["score"] = 0
+       // Calculate score based on selected choice
+        val score = if (selectedChoice == "Low") {
+            getLowScore()
+        } else {
+            getCombinationScore(selectedChoice.toInt())
         }
+        if (score == null) {
+            // Invalid selection, notify the user and disable next button
+            Log.d("GameViewModel", "Invalid selection")
+            return
+
+        }
+        Log.d("GameViewModel", "Score: $score")
         state["score"] = score
     }
 
+    fun onSpinnerChoiceChanged(choice: String) {
+        selectedChoice = choice
+        calculateScore()
+        Log.d("GameViewModel", "Selected choice: $selectedChoice")
+        // i dont know if i need to save this in the state lets see
+    }
 
 
     fun handleFinish() {
@@ -162,11 +238,13 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     fun toggleSelected(index: Int) {
         dieSet.toggleSelected(index)
         updateDiceState()
+        calculateScore()
     }
 
     fun resetSelection() {
         dieSet.resetSelection()
         updateDiceState()
+        calculateScore()
         _rollButtonEnabled.value = true
     }
 
