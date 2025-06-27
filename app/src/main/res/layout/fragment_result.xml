@@ -11,21 +11,119 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/results"
+        android:text="Results"
         android:textSize="34sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.24000001" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="32dp" />
+
+    <TableLayout
+        android:id="@+id/scoreTable"
+        android:stretchColumns="*"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/textView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="16dp">
+
+        <TableRow>
+            <TextView
+                android:text="@string/roundResult"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:padding="8dp" />
+            <TextView
+                android:text="@string/choice"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:padding="8dp" />
+            <TextView
+                android:text="@string/scoreResult"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:padding="8dp" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_1" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice1" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score1" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_2" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice2" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score2" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_3" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice3" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score3" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_4" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice4" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score4" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_5" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice5" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score5" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_6" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice6" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score6" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_7" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice7" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score7" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_8" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice8" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score8" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_9" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice9" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score9" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/_10" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/choice10" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/score10" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+
+        <TableRow>
+            <TextView android:text="@string/total" android:textStyle="bold" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/totalChoice" android:text="" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+            <TextView android:id="@+id/totalScore" android:text="" android:textStyle="bold" android:padding="8dp" android:gravity="center" android:textAlignment="center" />
+        </TableRow>
+    </TableLayout>
 
     <Button
         android:id="@+id/start_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_menu"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/scoreTable"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="32dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
