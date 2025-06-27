@@ -11,7 +11,7 @@ import se.umu.c22jwg.thirty.model.ScoreBoard
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     private val allChoices = listOf("Low", "4", "5", "6", "7", "8", "9", "10", "11", "12")
-    private val dieSet = DieSet()
+    private val dieSet: DieSet = state.get<DieSet>("dieSet") ?: DieSet()
 
     // Store the scoreboard in the state
     val scoreBoard: LiveData<ScoreBoard> = state.getLiveData("scoreBoard", ScoreBoard())
@@ -27,12 +27,18 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
 
     // LiveData that we don't need to save in the state
     private val _rollButtonEnabled = MutableLiveData(true)
-    private val _isDieSelectionEnabled = MutableLiveData(false)
+    private val _isDieSelectionEnabled = MutableLiveData(roll.value != 0)
     val isDieSelectionEnabled: LiveData<Boolean> = _isDieSelectionEnabled
     val rollButtonEnabled: LiveData<Boolean> = _rollButtonEnabled
 
     private val _dice = MutableLiveData(dieSet.getDiceSet)
     val dice: LiveData<List<Die>> = _dice
+
+    // Update the live data and state for the dice
+    private fun updateDiceState() {
+        _dice.value = dieSet.getDiceSet
+        state["dieSet"] = dieSet
+    }
 
     fun handleRoll() {
         val currentRoll = roll.value ?: 0
@@ -75,7 +81,8 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         state["roll"] = 0
         _isDieSelectionEnabled.value = false
         // TODO Calculate score based on selected choice
-
+        calculateScore(selectedChoice)
+        Log.d("GameViewModel", "Selected choice: $selectedChoice")
         //Remove the selected choice from the remaining choices list
         val currentList = state.get<MutableList<String>>("remainingChoices") ?: return
         currentList.remove(selectedChoice)
@@ -97,6 +104,53 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         }
     }
 
+    /**
+     * Calculate low score
+     * @return The score if valid, null otherwise
+     */
+   fun getLowScore(): Int? {
+       var score = 0
+       for (die in dieSet.getDiceSet) {
+           if (die.selected) {
+               if (die.value > 3) {
+                   // Invalid selection
+                   Log.d("GameViewModel", "Invalid selection")
+                   return null
+               }
+               score += die.value
+           }
+       }
+        Log.d("GameViewModel", "Low score: $score")
+       return score
+
+    }
+
+    fun getCombinationScore(choice: Int): Int {
+        return 23
+    }
+
+    /**
+     * Calculate the score based on the selected choice and die
+     */
+   fun calculateScore(choice: String){
+        val score = when (choice){
+            "Low" -> getLowScore()
+            "4" -> getCombinationScore(4)
+            "5" -> getCombinationScore(5)
+            "6" -> getCombinationScore(6)
+            "7" -> getCombinationScore(7)
+            "8" -> getCombinationScore(8)
+            "9" -> getCombinationScore(9)
+            "10" -> getCombinationScore(10)
+            "11" -> getCombinationScore(11)
+            "12" -> getCombinationScore(12)
+            else -> 0
+        }
+        state["score"] = score
+    }
+
+
+
     fun handleFinish() {
         state["navigateToResult"] = true
     }
@@ -107,12 +161,12 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
 
     fun toggleSelected(index: Int) {
         dieSet.toggleSelected(index)
-        _dice.value = dieSet.getDiceSet
+        updateDiceState()
     }
 
     fun resetSelection() {
         dieSet.resetSelection()
-        _dice.value = dieSet.getDiceSet
+        updateDiceState()
         _rollButtonEnabled.value = true
     }
 
@@ -122,17 +176,12 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             return
         }
         dieSet.rollDice()
-        _dice.value = dieSet.getDiceSet
-    }
-
-    fun rollSelectedDice() {
-        dieSet.rollSelectedDice()
-        _dice.value = dieSet.getDiceSet
+        updateDiceState()
     }
 
     fun rollOtherDice() {
         dieSet.rollOtherDice()
-        _dice.value = dieSet.getDiceSet
+        updateDiceState()
     }
 
     fun addScoreToBoard(choice: String, score: Int) {
