@@ -85,9 +85,9 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         //Reset the roll count and die selection
         state["roll"] = 0
         _isDieSelectionEnabled.value = false
-        // TODO Calculate score based on selected choice
         calculateScore()
-        Log.d("GameViewModel", "Selected choice: $selectedChoice")
+        addScoreToBoard(selectedChoice, score.value ?: 0)
+        Log.d("GameViewModel", "Selected choice: $selectedChoice" + "Score: ${score.value}")
         //Remove the selected choice from the remaining choices list
         val currentList = state.get<MutableList<String>>("remainingChoices") ?: return
         currentList.remove(selectedChoice)
@@ -234,6 +234,11 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
 
 
     fun handleFinish() {
+        // Add the final score before navigating
+        addScoreToBoard(selectedChoice, score.value ?: 0)
+        Log.d("GameViewModel", "Final round - Selected choice: $selectedChoice, Score: ${score.value}")
+        // Call game over
+        gameOver()
         state["navigateToResult"] = true
     }
 
@@ -274,4 +279,35 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         state["scoreBoard"] = board
     }
 
+    fun getRoundResults(): List<Pair<String, Int>> {
+        val board = state["scoreBoard"] ?: ScoreBoard()
+
+        val scores =  board.getScores();
+        Log.d("GameViewModel", "Round results: $scores")
+        for (score in scores) {
+            Log.d("GameViewModel", "Round results: ${score.first} ${score.second}")
+        }
+        return scores
+    }
+
+    fun getTotalScore(): Int {
+        val board = state["scoreBoard"] ?: ScoreBoard()
+        val totalScore = board.getTotalScore()
+        Log.d("GameViewModel", "Total score: $totalScore")
+        return totalScore;
+    }
+
+    fun gameOver(){
+        // Reset all data to the initial state
+        state["showFinish"] = false
+        state["round"] = 1
+        state["score"] = 0
+        state["roll"] = 0
+        state["rollButtonEnabled"] = true
+        state["nextButtonEnabled"] = true
+        state["remainingChoices"] = allChoices.toMutableList()
+        state["dieSet"] = DieSet()
+        state["navigateToResult"] = false
+        Log.d("GameViewModel", "Game over")
+    }
 }
