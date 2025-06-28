@@ -94,7 +94,6 @@ class GameFragment : Fragment() {
         viewModel.navigateToResult.observe(viewLifecycleOwner) { shouldNavigate ->
             if (shouldNavigate) {
                     findNavController().navigate(R.id.action_gameFragment_to_resultFragment)
-                viewModel.onNavigatedToResult()
             }
         }
 

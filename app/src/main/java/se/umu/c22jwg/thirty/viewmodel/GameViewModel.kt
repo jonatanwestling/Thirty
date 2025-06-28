@@ -233,43 +233,27 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         updateGameState(updatedState)
     }
 
-    fun onNavigatedToResult() {
-        val currentState = _gameState.value ?: return
-        val updatedState = currentState.copyWith(navigateToResult = false)
-        updateGameState(updatedState)
-    }
 
-    fun resetSelection() {
-        val currentState = _gameState.value ?: return
-        val newDieSet = currentState.dieSet
-        newDieSet.resetSelection()
-        
-        val calculatedScore = calculateScore(currentState.copyWith(dieSet = newDieSet))
-        
-        val updatedState = currentState.copyWith(
-            dieSet = newDieSet,
-            currentScore = calculatedScore,
-            rollButtonEnabled = true,
-            nextButtonEnabled = calculatedScore >= 0
-        )
-        
-        updateGameState(updatedState)
-    }
-
-    fun gameOver() {
-        val resetState = GameState()
-        updateGameState(resetState)
-    }
-
-    // Score calculation methods (keeping your existing logic)
+    /**
+     * Calculate the score based on the users choice selection.
+     *
+     * @param gameState, the current game state
+     * @return the calculated score or 0 if the selection is invalid
+     */
     private fun calculateScore(gameState: GameState): Int {
         return if (gameState.selectedChoice == "Low") {
-            getLowScore(gameState.dieSet) ?: -1
+            getLowScore(gameState.dieSet) ?: 0
         } else {
-            getCombinationScore(gameState.dieSet, gameState.selectedChoice.toInt()) ?: -1
+            getCombinationScore(gameState.dieSet, gameState.selectedChoice.toInt()) ?: 0
         }
     }
 
+    /**
+     * Calculate the low score, the sum of all dice with a value less than 4.
+     *
+     * @param dieSet, the set of dice to be used in the calculation
+     * @return The score if valid, null otherwise
+     */
     private fun getLowScore(dieSet: DieSet): Int? {
         var score = 0
         for (die in dieSet.getDiceSet) {
@@ -285,6 +269,15 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         return score
     }
 
+    /**
+     * Recursive helper function to find any combination of in remaining  that sums to target
+     * When a valid combination is found, it is added it gets stored in current.
+     *
+     * @param current, the current combination being built
+     * @param remaining, the remaining values to be used in the combination
+     * @param target, the target sum of the combination
+     * @return true if a valid combination is found, false otherwise
+     */
     fun findCombination(current: MutableList<Int>, remaining: MutableList<Int>, target: Int): Boolean {
         if (target == 0) return true
         if (target < 0 || remaining.isEmpty()) return false
@@ -302,18 +295,30 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         return false
     }
 
+    /**
+     * Calculates the score based on the selected die combination and
+     * the selected choice. It uses findCombination to find all valid
+     * combinations and adds the score for each valid combination.
+     *
+     * @param dieSet, the set of dice to be used in the calculation
+     * @param choice, the selected choice for the calculation
+     * @return the calculated score or null if the selection is invalid
+     */
     private fun getCombinationScore(dieSet: DieSet, choice: Int): Int? {
+        // Get the selected dice values
         val selectedValues = dieSet.getDiceSet
             .filter { it.selected }
             .map { it.value }
             .toMutableList()
-
+        // No die selected, 0 points
         if (selectedValues.isEmpty()) return 0
-
         var totalScore = 0
+        // Find all valid grouping combinations
         while (true) {
             val tempGroup = mutableListOf<Int>()
+            // Add the point each time a combination is found
             if (findCombination(tempGroup, selectedValues, choice)) {
+                // Remove used values to avoid duplicates
                 tempGroup.forEach { value ->
                     selectedValues.remove(value)
                 }
@@ -322,9 +327,16 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
                 break
             }
         }
+        // Return points if valid and no remaining dice
         return if (selectedValues.isEmpty() && totalScore > 0) totalScore else null
     }
 
+    /**
+     * Get the results of all rounds from the score board, stored in order
+     * of round number.
+     *
+     * @return a list of pairs containing the round number and the score
+     */
     fun getRoundResults(): List<Pair<String, Int>> {
         val currentState = _gameState.value ?: return emptyList()
         val scores = currentState.scoreBoard.getScores()
@@ -335,10 +347,22 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         return scores
     }
 
+    /**
+     * Get the total score from the score board
+     *
+     * @return the total score
+     */
     fun getTotalScore(): Int {
         val currentState = _gameState.value ?: return 0
         val totalScore = currentState.scoreBoard.getTotalScore()
         Log.d("GameViewModel", "Total score: $totalScore")
         return totalScore
+    }
+    /**
+     * Resets the state of the game
+     */
+    fun gameOver() {
+        val resetState = GameState()
+        updateGameState(resetState)
     }
 }
