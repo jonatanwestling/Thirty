@@ -12,17 +12,16 @@ import se.umu.c22jwg.thirty.model.ScoreBoard
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     
-    // Single source of truth for game state
     private val _gameState = MutableLiveData<GameState>()
     val gameState: LiveData<GameState> = _gameState
     
-    // Initialize game state from saved state or create new one
+    // Init the game state from saved state or create a new one
     init {
         val savedState = state.get<GameState>("gameState")
         _gameState.value = savedState ?: GameState()
     }
     
-    // LiveData properties derived from GameState
+    // LiveData for the UI to observe
     val dice: LiveData<List<Die>> = MutableLiveData<List<Die>>().apply {
         value = _gameState.value?.dieSet?.getDiceSet ?: emptyList()
     }
@@ -63,7 +62,9 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         value = _gameState.value?.isDieSelectionEnabled ?: false
     }
 
-    // Update all LiveData when game state changes
+    /**
+     * Updates the LiveData values each time the game state changes.
+     */
     private fun updateLiveData() {
         val currentState = _gameState.value ?: return
         
@@ -79,13 +80,21 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         (isDieSelectionEnabled as MutableLiveData).value = currentState.isDieSelectionEnabled
     }
 
-    // Update game state and persist it
+    /**
+     * Update and save the new game state in the SavedStateHandle.
+     *
+     * @param newState, the new game state to be saved.
+     */
     private fun updateGameState(newState: GameState) {
         _gameState.value = newState
         state["gameState"] = newState
         updateLiveData()
     }
 
+    /**
+     * Handles the roll button click event. Checks amount of rolls, rolls the
+     * dice and updates the game state.
+     */
     fun handleRoll() {
         val currentState = _gameState.value ?: return
         val currentRoll = currentState.currentRoll
@@ -96,7 +105,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             if (currentRoll == 0) {
                 // Enable die selection after first roll
                 val updatedState = currentState.copyWith(
-                    currentRoll = currentRoll + 1,
+                    currentRoll = 1,
                     isDieSelectionEnabled = true
                 )
                 updateGameState(updatedState)
@@ -130,21 +139,23 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         }
     }
 
+    /**
+     * Handles the next button click event. Uses helper methods to calculate the
+     * score based on the users choice selection and update the game state.
+     */
     fun handleNext() {
         val currentState = _gameState.value ?: return
-        
         // Calculate and add score
         val calculatedScore = calculateScore(currentState)
         val newScoreBoard = currentState.scoreBoard
         newScoreBoard.addScore(currentState.selectedChoice, calculatedScore)
-        
         // Remove selected choice from remaining choices
         val newRemainingChoices = currentState.remainingChoices.toMutableList()
         newRemainingChoices.remove(currentState.selectedChoice)
-        
+
         val currentRound = currentState.currentRound
         val newRound = if (currentRound < 10) currentRound + 1 else 1
-        
+        // Update the state for the next round
         val updatedState = currentState.copyWith(
             scoreBoard = newScoreBoard,
             remainingChoices = newRemainingChoices,
@@ -156,21 +167,23 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             showFinish = newRound == 10,
             nextButtonEnabled = true
         )
-        
         // Reset die selection
         updatedState.dieSet.resetSelection()
-        
         updateGameState(updatedState)
     }
 
+    /**
+     * Handles the spinner choice change event. Updates the game state with the
+     * selected choice.
+     *
+     * @param choice, the selected choice from the spinner.
+     */
     fun onSpinnerChoiceChanged(choice: String) {
         val currentState = _gameState.value ?: return
-        
         // Only update if the choice actually changed
         if (currentState.selectedChoice == choice) {
             return
         }
-        
         Log.d("GameViewModel", "Selected choice: $choice")
         val calculatedScore = calculateScore(currentState.copyWith(selectedChoice = choice))
         
@@ -179,25 +192,32 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             currentScore = calculatedScore,
             nextButtonEnabled = calculatedScore >= 0
         )
-        
         updateGameState(updatedState)
     }
 
+    /**
+     * Handles the die selection event, it toggles the selected die based
+     * on the index. Also it updates the game score so the user can see
+     * live score updates when selecting dice.
+     */
     fun toggleSelected(index: Int) {
         val currentState = _gameState.value ?: return
         val newDieSet = currentState.dieSet
         newDieSet.toggleSelected(index)
-        
+        // Update the score
         val calculatedScore = calculateScore(currentState.copyWith(dieSet = newDieSet))
-        
         val updatedState = currentState.copyWith(
             dieSet = newDieSet,
             currentScore = calculatedScore,
             nextButtonEnabled = calculatedScore >= 0
         )
-        
         updateGameState(updatedState)
     }
+
+    /**
+     * Handles the finish button click, it updates the state with the score from
+     * the last round and navigates to the result screen.
+     */
 
     fun handleFinish() {
         val currentState = _gameState.value ?: return
@@ -208,7 +228,6 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             scoreBoard = newScoreBoard,
             navigateToResult = true
         )
-        
         updateGameState(updatedState)
     }
 
@@ -235,29 +254,6 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         updateGameState(updatedState)
     }
 
-    fun rollDice() {
-        val currentState = _gameState.value ?: return
-        val newDieSet = currentState.dieSet
-        
-        if (newDieSet.getSelected().contains(true)) {
-            newDieSet.rollOtherDice()
-        } else {
-            newDieSet.rollDice()
-        }
-        
-        val updatedState = currentState.copyWith(dieSet = newDieSet)
-        updateGameState(updatedState)
-    }
-
-    fun rollOtherDice() {
-        val currentState = _gameState.value ?: return
-        val newDieSet = currentState.dieSet
-        newDieSet.rollOtherDice()
-        
-        val updatedState = currentState.copyWith(dieSet = newDieSet)
-        updateGameState(updatedState)
-    }
-
     fun gameOver() {
         val resetState = GameState()
         updateGameState(resetState)
@@ -270,11 +266,6 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         } else {
             getCombinationScore(gameState.dieSet, gameState.selectedChoice.toInt()) ?: -1
         }
-    }
-
-    fun getLowScore(): Int? {
-        val currentState = _gameState.value ?: return null
-        return getLowScore(currentState.dieSet)
     }
 
     private fun getLowScore(dieSet: DieSet): Int? {
@@ -307,11 +298,6 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             current.removeAt(current.size - 1)
         }
         return false
-    }
-
-    fun getCombinationScore(choice: Int): Int? {
-        val currentState = _gameState.value ?: return null
-        return getCombinationScore(currentState.dieSet, choice)
     }
 
     private fun getCombinationScore(dieSet: DieSet, choice: Int): Int? {
