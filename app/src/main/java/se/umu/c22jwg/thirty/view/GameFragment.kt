@@ -27,6 +27,7 @@ class GameFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: GameViewModel by activityViewModels()
     var dieSelectionEnabled = false
+    private var isUpdatingSpinner = false // Flag to prevent listener firing during updates
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -74,16 +75,25 @@ class GameFragment : Fragment() {
         }
 
         viewModel.remainingChoices.observe(viewLifecycleOwner) { choices ->
+            isUpdatingSpinner = true // Prevent listener from firing
             val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, choices)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.scoreSpinner.adapter = adapter
+            
+            // Set the spinner to show the currently selected choice
+            val currentChoice = viewModel.gameState.value?.selectedChoice
+            if (currentChoice != null && choices.contains(currentChoice)) {
+                val position = choices.indexOf(currentChoice)
+                binding.scoreSpinner.setSelection(position)
+            }
+            
+            isUpdatingSpinner = false // Re-enable listener
         }
 
         // Observe navigation event
         viewModel.navigateToResult.observe(viewLifecycleOwner) { shouldNavigate ->
             if (shouldNavigate) {
                     findNavController().navigate(R.id.action_gameFragment_to_resultFragment)
-                viewModel.onNavigatedToResult()
             }
         }
 
@@ -105,8 +115,11 @@ class GameFragment : Fragment() {
         // Update the viewmodel when the spinner item has changed
         binding.scoreSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val selectedChoice = parent.getItemAtPosition(position).toString()
-                viewModel.onSpinnerChoiceChanged(selectedChoice)
+                // Only process if we're not programmatically updating the spinner
+                if (!isUpdatingSpinner) {
+                    val selectedChoice = parent.getItemAtPosition(position).toString()
+                    viewModel.onSpinnerChoiceChanged(selectedChoice)
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {
             }

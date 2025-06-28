@@ -25,6 +25,7 @@ class ResultFragment: Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val viewModel : GameViewModel by activityViewModels()
         // Initialize UI components
         val startButton: View = view.findViewById(R.id.start_button)
         startButton.setOnClickListener {
@@ -36,8 +37,10 @@ class ResultFragment: Fragment() {
                     .setPopUpTo(R.id.startFragment, inclusive = true)
                     .build()
             )
+            viewModel.gameOver();
+
         }
-        val viewModel : GameViewModel by activityViewModels()
+
         // call the viewmodel to get the data here
         val scoreList = viewModel.getRoundResults();
         val choiceTextViews = listOf(
