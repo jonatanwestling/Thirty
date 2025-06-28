@@ -7,186 +7,325 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.model.DieSet
+import se.umu.c22jwg.thirty.model.GameState
 import se.umu.c22jwg.thirty.model.ScoreBoard
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
-    private val allChoices = listOf("Low", "4", "5", "6", "7", "8", "9", "10", "11", "12")
-    private val dieSet: DieSet = state.get<DieSet>("dieSet") ?: DieSet()
+    
+    // Single source of truth for game state
+    private val _gameState = MutableLiveData<GameState>()
+    val gameState: LiveData<GameState> = _gameState
+    
+    // Initialize game state from saved state or create new one
+    init {
+        val savedState = state.get<GameState>("gameState")
+        _gameState.value = savedState ?: GameState()
+    }
+    
+    // LiveData properties derived from GameState
+    val dice: LiveData<List<Die>> = MutableLiveData<List<Die>>().apply {
+        value = _gameState.value?.dieSet?.getDiceSet ?: emptyList()
+    }
+    
+    val round: LiveData<Int> = MutableLiveData<Int>().apply {
+        value = _gameState.value?.currentRound ?: 1
+    }
+    
+    val roll: LiveData<Int> = MutableLiveData<Int>().apply {
+        value = _gameState.value?.currentRoll ?: 0
+    }
+    
+    val score: LiveData<Int> = MutableLiveData<Int>().apply {
+        value = _gameState.value?.currentScore ?: 0
+    }
+    
+    val rollButtonEnabled: LiveData<Boolean> = MutableLiveData<Boolean>().apply {
+        value = _gameState.value?.rollButtonEnabled ?: true
+    }
+    
+    val nextButtonEnabled: LiveData<Boolean> = MutableLiveData<Boolean>().apply {
+        value = _gameState.value?.nextButtonEnabled ?: true
+    }
+    
+    val showFinish: LiveData<Boolean> = MutableLiveData<Boolean>().apply {
+        value = _gameState.value?.showFinish ?: false
+    }
+    
+    val navigateToResult: LiveData<Boolean> = MutableLiveData<Boolean>().apply {
+        value = _gameState.value?.navigateToResult ?: false
+    }
+    
+    val remainingChoices: LiveData<MutableList<String>> = MutableLiveData<MutableList<String>>().apply {
+        value = _gameState.value?.remainingChoices ?: mutableListOf()
+    }
+    
+    val isDieSelectionEnabled: LiveData<Boolean> = MutableLiveData<Boolean>().apply {
+        value = _gameState.value?.isDieSelectionEnabled ?: false
+    }
 
-    // Store the scoreboard in the state
-    val scoreBoard: LiveData<ScoreBoard> = state.getLiveData("scoreBoard", ScoreBoard())
+    // Update all LiveData when game state changes
+    private fun updateLiveData() {
+        val currentState = _gameState.value ?: return
+        
+        (dice as MutableLiveData).value = currentState.dieSet.getDiceSet
+        (round as MutableLiveData).value = currentState.currentRound
+        (roll as MutableLiveData).value = currentState.currentRoll
+        (score as MutableLiveData).value = currentState.currentScore
+        (rollButtonEnabled as MutableLiveData).value = currentState.rollButtonEnabled
+        (nextButtonEnabled as MutableLiveData).value = currentState.nextButtonEnabled
+        (showFinish as MutableLiveData).value = currentState.showFinish
+        (navigateToResult as MutableLiveData).value = currentState.navigateToResult
+        (remainingChoices as MutableLiveData).value = currentState.remainingChoices
+        (isDieSelectionEnabled as MutableLiveData).value = currentState.isDieSelectionEnabled
+    }
 
-    // LiveData and state handling for important game data
-    val round: LiveData<Int> = state.getLiveData("round", 1)
-    val roll: LiveData<Int> = state.getLiveData("roll", 0)
-    val score: LiveData<Int> = state.getLiveData("score", 0)
-    val rollButtonEnabled: LiveData<Boolean> = state.getLiveData("rollButtonEnabled", true)
-    val showFinish: LiveData<Boolean> = state.getLiveData("showFinish", false)
-    val navigateToResult: LiveData<Boolean> = state.getLiveData("navigateToResult", false)
-    val remainingChoices: LiveData<MutableList<String>> =
-        state.getLiveData("remainingChoices", allChoices.toMutableList())
-
-    // Init the selected choice to the first choice in the list
-    private var selectedChoice: String = remainingChoices.value?.first() ?: ""
-
-    // LiveData that we don't need to save in the state
-    private val _nextButtonEnabled = MutableLiveData(true);
-
-    private val _isDieSelectionEnabled = MutableLiveData(roll.value != 0)
-    val isDieSelectionEnabled: LiveData<Boolean> = _isDieSelectionEnabled
-
-    val nextButtonEnabled: LiveData<Boolean> = _nextButtonEnabled
-    private val _dice = MutableLiveData(dieSet.getDiceSet)
-    val dice: LiveData<List<Die>> = _dice
-
-    // Update the live data and state for the dice
-    private fun updateDiceState() {
-        _dice.value = dieSet.getDiceSet
-        state["dieSet"] = dieSet
+    // Update game state and persist it
+    private fun updateGameState(newState: GameState) {
+        _gameState.value = newState
+        state["gameState"] = newState
+        updateLiveData()
     }
 
     fun handleRoll() {
-        val currentRoll = roll.value ?: 0
+        val currentState = _gameState.value ?: return
+        val currentRoll = currentState.currentRoll
 
         if (currentRoll < 2) {
             // First or second roll
-            if (currentRoll == 0){
-                // Now we can enable the die selection
-                _isDieSelectionEnabled.value = true
-            }
-            if (dieSet.getSelected().contains(true)) {
-                rollOtherDice()
+            val newDieSet = currentState.dieSet
+            if (currentRoll == 0) {
+                // Enable die selection after first roll
+                val updatedState = currentState.copyWith(
+                    currentRoll = currentRoll + 1,
+                    isDieSelectionEnabled = true
+                )
+                updateGameState(updatedState)
             } else {
-                rollDice()
+                // Second roll
+                if (newDieSet.getSelected().contains(true)) {
+                    newDieSet.rollOtherDice()
+                } else {
+                    newDieSet.rollDice()
+                }
+                val updatedState = currentState.copyWith(
+                    dieSet = newDieSet,
+                    currentRoll = currentRoll + 1
+                )
+                updateGameState(updatedState)
             }
-            state["roll"] = currentRoll + 1
         } else {
             // Third roll
-            state["rollButtonEnabled"] = false
-            if (dieSet.getSelected().contains(true)) {
-                rollOtherDice()
+            val newDieSet = currentState.dieSet
+            if (newDieSet.getSelected().contains(true)) {
+                newDieSet.rollOtherDice()
             } else {
-                rollDice()
+                newDieSet.rollDice()
             }
-            // Increment roll so it says 3/3
-            state["roll"] = currentRoll + 1
+            val updatedState = currentState.copyWith(
+                dieSet = newDieSet,
+                currentRoll = currentRoll + 1,
+                rollButtonEnabled = false
+            )
+            updateGameState(updatedState)
         }
     }
 
-    /**
-     * Handle the next press meaning the user want to register the current choice and move to the
-     * next round. This function call helper functions to calculate the score and update the all
-     * relevant data.
-     *
-     * @param selectedChoice The choice the user made
-     * @return Nothing
-     */
     fun handleNext() {
-        //Reset the roll count and die selection
-        state["roll"] = 0
-        _isDieSelectionEnabled.value = false
-        calculateScore()
-        addScoreToBoard(selectedChoice, score.value ?: 0)
-        Log.d("GameViewModel", "Selected choice: $selectedChoice" + "Score: ${score.value}")
-        //Remove the selected choice from the remaining choices list
-        val currentList = state.get<MutableList<String>>("remainingChoices") ?: return
-        currentList.remove(selectedChoice)
-        state["remainingChoices"] = currentList
+        val currentState = _gameState.value ?: return
+        
+        // Calculate and add score
+        val calculatedScore = calculateScore(currentState)
+        val newScoreBoard = currentState.scoreBoard
+        newScoreBoard.addScore(currentState.selectedChoice, calculatedScore)
+        
+        // Remove selected choice from remaining choices
+        val newRemainingChoices = currentState.remainingChoices.toMutableList()
+        newRemainingChoices.remove(currentState.selectedChoice)
+        
+        val currentRound = currentState.currentRound
+        val newRound = if (currentRound < 10) currentRound + 1 else 1
+        
+        val updatedState = currentState.copyWith(
+            scoreBoard = newScoreBoard,
+            remainingChoices = newRemainingChoices,
+            currentRound = newRound,
+            currentRoll = 0,
+            currentScore = 0,
+            rollButtonEnabled = true,
+            isDieSelectionEnabled = false,
+            showFinish = newRound == 10,
+            nextButtonEnabled = true
+        )
+        
+        // Reset die selection
+        updatedState.dieSet.resetSelection()
+        
+        updateGameState(updatedState)
+    }
 
-        val currentRound = round.value ?: 1
-        if (currentRound < 10) {
-            if (currentRound == 9) {
-                state["showFinish"] = true
-            }
-            state["round"] = currentRound + 1
-            resetSelection()
+    fun onSpinnerChoiceChanged(choice: String) {
+        val currentState = _gameState.value ?: return
+        
+        // Only update if the choice actually changed
+        if (currentState.selectedChoice == choice) {
+            return
+        }
+        
+        Log.d("GameViewModel", "Selected choice: $choice")
+        val calculatedScore = calculateScore(currentState.copyWith(selectedChoice = choice))
+        
+        val updatedState = currentState.copyWith(
+            selectedChoice = choice,
+            currentScore = calculatedScore,
+            nextButtonEnabled = calculatedScore >= 0
+        )
+        
+        updateGameState(updatedState)
+    }
+
+    fun toggleSelected(index: Int) {
+        val currentState = _gameState.value ?: return
+        val newDieSet = currentState.dieSet
+        newDieSet.toggleSelected(index)
+        
+        val calculatedScore = calculateScore(currentState.copyWith(dieSet = newDieSet))
+        
+        val updatedState = currentState.copyWith(
+            dieSet = newDieSet,
+            currentScore = calculatedScore,
+            nextButtonEnabled = calculatedScore >= 0
+        )
+        
+        updateGameState(updatedState)
+    }
+
+    fun handleFinish() {
+        val currentState = _gameState.value ?: return
+        val newScoreBoard = currentState.scoreBoard
+        newScoreBoard.addScore(currentState.selectedChoice, currentState.currentScore)
+        
+        val updatedState = currentState.copyWith(
+            scoreBoard = newScoreBoard,
+            navigateToResult = true
+        )
+        
+        updateGameState(updatedState)
+    }
+
+    fun onNavigatedToResult() {
+        val currentState = _gameState.value ?: return
+        val updatedState = currentState.copyWith(navigateToResult = false)
+        updateGameState(updatedState)
+    }
+
+    fun resetSelection() {
+        val currentState = _gameState.value ?: return
+        val newDieSet = currentState.dieSet
+        newDieSet.resetSelection()
+        
+        val calculatedScore = calculateScore(currentState.copyWith(dieSet = newDieSet))
+        
+        val updatedState = currentState.copyWith(
+            dieSet = newDieSet,
+            currentScore = calculatedScore,
+            rollButtonEnabled = true,
+            nextButtonEnabled = calculatedScore >= 0
+        )
+        
+        updateGameState(updatedState)
+    }
+
+    fun rollDice() {
+        val currentState = _gameState.value ?: return
+        val newDieSet = currentState.dieSet
+        
+        if (newDieSet.getSelected().contains(true)) {
+            newDieSet.rollOtherDice()
         } else {
-            // Game over
-            Log.d("GameViewModel", "Game over!")
-            state["score"] = 0
-            state["showFinish"] = false
-            state["round"] = 1
+            newDieSet.rollDice()
+        }
+        
+        val updatedState = currentState.copyWith(dieSet = newDieSet)
+        updateGameState(updatedState)
+    }
+
+    fun rollOtherDice() {
+        val currentState = _gameState.value ?: return
+        val newDieSet = currentState.dieSet
+        newDieSet.rollOtherDice()
+        
+        val updatedState = currentState.copyWith(dieSet = newDieSet)
+        updateGameState(updatedState)
+    }
+
+    fun gameOver() {
+        val resetState = GameState()
+        updateGameState(resetState)
+    }
+
+    // Score calculation methods (keeping your existing logic)
+    private fun calculateScore(gameState: GameState): Int {
+        return if (gameState.selectedChoice == "Low") {
+            getLowScore(gameState.dieSet) ?: -1
+        } else {
+            getCombinationScore(gameState.dieSet, gameState.selectedChoice.toInt()) ?: -1
         }
     }
 
-    /**
-     * Calculate low score
-     * @return The score if valid, null otherwise
-     */
-   fun getLowScore(): Int? {
-       var score = 0
-       for (die in dieSet.getDiceSet) {
-           if (die.selected) {
-               if (die.value > 3) {
-                   // Invalid selection
-                   Log.d("GameViewModel", "Invalid selection")
-                   return null
-               }
-               score += die.value
-           }
-       }
-        Log.d("GameViewModel", "Low score: $score")
-       return score
-
+    fun getLowScore(): Int? {
+        val currentState = _gameState.value ?: return null
+        return getLowScore(currentState.dieSet)
     }
 
-    /**
-     * Recursive helper function to find any combination of in remaining  that sums to target
-     * When a valid combination is found, it is added it gets stored in current.
-     *
-     * @param current, the current combination
-     * @param remaining, the remaining unused dice values
-     * @param target, the target sum selected by the player choice
-     * @return true if a valid combination is found, false otherwise
-     */
+    private fun getLowScore(dieSet: DieSet): Int? {
+        var score = 0
+        for (die in dieSet.getDiceSet) {
+            if (die.selected) {
+                if (die.value > 3) {
+                    Log.d("GameViewModel", "Invalid selection")
+                    return null
+                }
+                score += die.value
+            }
+        }
+        Log.d("GameViewModel", "Low score: $score")
+        return score
+    }
+
     fun findCombination(current: MutableList<Int>, remaining: MutableList<Int>, target: Int): Boolean {
-        // Base case, valid combination
         if (target == 0) return true
-        // Invalid case, no valid combination or remaining dice
         if (target < 0 || remaining.isEmpty()) return false
 
-        // Iterate and check all remaining dice combinations
         for (i in remaining.indices) {
-            //get the value and remove it from the list to make the recursive call
             val value = remaining[i]
             val newRemaining = remaining.toMutableList()
             newRemaining.removeAt(i)
             current.add(value)
-            //Check if the recursive call contains a valid combination
             if (findCombination(current, newRemaining, target - value)) {
                 return true
             }
-            // Backtrack to undo last step that did not lead to a valid combination
             current.removeAt(current.size - 1)
         }
-        // No valid combination found
         return false
     }
-    /**
-     * Calculate the score based on the selected choice and die. It
-     * checks if the user has made the correct choice and selected
-     * valid combinations.
-     *
-     * @param choice The choice the user made in the range of 4-12
-     * @return The score if valid, null otherwise
-     */
+
     fun getCombinationScore(choice: Int): Int? {
-        // Get the values of the selected die
+        val currentState = _gameState.value ?: return null
+        return getCombinationScore(currentState.dieSet, choice)
+    }
+
+    private fun getCombinationScore(dieSet: DieSet, choice: Int): Int? {
         val selectedValues = dieSet.getDiceSet
             .filter { it.selected }
             .map { it.value }
             .toMutableList()
 
-        // No die selected, 0 points
         if (selectedValues.isEmpty()) return 0
 
         var totalScore = 0
-        // Find all valid grouping combinations
         while (true) {
             val tempGroup = mutableListOf<Int>()
-            // Add the point each time a combination is found
             if (findCombination(tempGroup, selectedValues, choice)) {
-                // Remove used dice
                 tempGroup.forEach { value ->
                     selectedValues.remove(value)
                 }
@@ -195,94 +334,12 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
                 break
             }
         }
-        // Return points if valid and no remaining dice
         return if (selectedValues.isEmpty() && totalScore > 0) totalScore else null
     }
 
-    /**
-     * Calculate the score based on the selected choice and die
-     */
-   fun calculateScore(){
-       // reset score
-       state["score"] = 0
-       // Calculate score based on selected choice
-        val score = if (selectedChoice == "Low") {
-            getLowScore()
-        } else {
-            getCombinationScore(selectedChoice.toInt())
-        }
-        if (score == null) {
-            // Invalid selection, notify the user and disable next button
-            Log.d("GameViewModel", "Invalid selection")
-            //disable the next button
-            _nextButtonEnabled.value = false
-            return
-
-        }
-        // Enable the next button
-        _nextButtonEnabled.value = true
-        Log.d("GameViewModel", "Score: $score")
-        state["score"] = score
-    }
-
-    fun onSpinnerChoiceChanged(choice: String) {
-        selectedChoice = choice
-        calculateScore()
-        Log.d("GameViewModel", "Selected choice: $selectedChoice")
-        // i dont know if i need to save this in the state lets see
-    }
-
-
-    fun handleFinish() {
-        // Add the final score before navigating
-        addScoreToBoard(selectedChoice, score.value ?: 0)
-        Log.d("GameViewModel", "Final round - Selected choice: $selectedChoice, Score: ${score.value}")
-        // Call game over
-        gameOver()
-        state["navigateToResult"] = true
-    }
-
-    fun onNavigatedToResult() {
-        state["navigateToResult"] = false
-    }
-
-    fun toggleSelected(index: Int) {
-        dieSet.toggleSelected(index)
-        updateDiceState()
-        calculateScore()
-    }
-
-    fun resetSelection() {
-        dieSet.resetSelection()
-        updateDiceState()
-        calculateScore()
-        state["rollButtonEnabled"] = true
-    }
-
-    fun rollDice() {
-        if (dieSet.getSelected().contains(true)) {
-            rollOtherDice()
-            return
-        }
-        dieSet.rollDice()
-        updateDiceState()
-    }
-
-    fun rollOtherDice() {
-        dieSet.rollOtherDice()
-        updateDiceState()
-    }
-
-    fun addScoreToBoard(choice: String, score: Int) {
-        val board = state["scoreBoard"] ?: ScoreBoard()
-        board.addScore(choice, score)
-        state["scoreBoard"] = board
-    }
-
     fun getRoundResults(): List<Pair<String, Int>> {
-        val board = state["scoreBoard"] ?: ScoreBoard()
-
-        val scores =  board.getScores();
+        val currentState = _gameState.value ?: return emptyList()
+        val scores = currentState.scoreBoard.getScores()
         Log.d("GameViewModel", "Round results: $scores")
         for (score in scores) {
             Log.d("GameViewModel", "Round results: ${score.first} ${score.second}")
@@ -291,23 +348,9 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     }
 
     fun getTotalScore(): Int {
-        val board = state["scoreBoard"] ?: ScoreBoard()
-        val totalScore = board.getTotalScore()
+        val currentState = _gameState.value ?: return 0
+        val totalScore = currentState.scoreBoard.getTotalScore()
         Log.d("GameViewModel", "Total score: $totalScore")
-        return totalScore;
-    }
-
-    fun gameOver(){
-        // Reset all data to the initial state
-        state["showFinish"] = false
-        state["round"] = 1
-        state["score"] = 0
-        state["roll"] = 0
-        state["rollButtonEnabled"] = true
-        state["nextButtonEnabled"] = true
-        state["remainingChoices"] = allChoices.toMutableList()
-        state["dieSet"] = DieSet()
-        state["navigateToResult"] = false
-        Log.d("GameViewModel", "Game over")
+        return totalScore
     }
 }
