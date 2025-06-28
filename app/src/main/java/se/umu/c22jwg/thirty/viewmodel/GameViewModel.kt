@@ -103,8 +103,10 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             // First or second roll
             val newDieSet = currentState.dieSet
             if (currentRoll == 0) {
-                // Enable die selection after first roll
+                // Roll all dice
+                newDieSet.rollDice()
                 val updatedState = currentState.copyWith(
+                    dieSet = newDieSet,
                     currentRoll = 1,
                     isDieSelectionEnabled = true
                 )
