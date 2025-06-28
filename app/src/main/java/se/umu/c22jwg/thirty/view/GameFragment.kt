@@ -46,36 +46,34 @@ class GameFragment : Fragment() {
         }
         // Observe round changes
         viewModel.round.observe(viewLifecycleOwner) { round ->
-            binding.RoundNum?.text = getString(R.string.round_text, round);
+            binding.RoundNum.text = getString(R.string.round_text, round);
         }
         // Observe roll changes
         viewModel.roll.observe(viewLifecycleOwner) { roll ->
-            binding.RollNum?.text = getString(R.string.roll_text, roll);
+            binding.RollNum.text = getString(R.string.roll_text, roll);
         }
         // Observe score changes
         viewModel.score.observe(viewLifecycleOwner) { score ->
-            binding.ScoreNum?.text = "$score"
+            binding.ScoreNum.text = "$score"
         }
         viewModel.rollButtonEnabled.observe(viewLifecycleOwner) { enabled ->
-            binding.rollButton?.isEnabled = enabled
+            binding.rollButton.isEnabled = enabled
         }
         viewModel.nextButtonEnabled.observe(viewLifecycleOwner) { enabled ->
-            binding.nextButton?.isEnabled = enabled
+            binding.nextButton.isEnabled = enabled
         }
         viewModel.isDieSelectionEnabled.observe(viewLifecycleOwner) {
             dieSelectionEnabled = it
         }
-
         viewModel.showFinish.observe(viewLifecycleOwner) { show ->
             if (show) {
-                binding.nextButton?.text = getString(R.string.finish_text)
+                binding.nextButton.text = getString(R.string.finish_text)
             } else {
-                binding.nextButton?.text = getString(R.string.next_text)
+                binding.nextButton.text = getString(R.string.next_text)
             }
         }
-
         viewModel.remainingChoices.observe(viewLifecycleOwner) { choices ->
-            isUpdatingSpinner = true // Prevent listener from firing
+            isUpdatingSpinner = true
             val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, choices)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.scoreSpinner.adapter = adapter
@@ -87,24 +85,21 @@ class GameFragment : Fragment() {
                 binding.scoreSpinner.setSelection(position)
             }
             
-            isUpdatingSpinner = false // Re-enable listener
+            isUpdatingSpinner = false
         }
-
         // Observe navigation event
         viewModel.navigateToResult.observe(viewLifecycleOwner) { shouldNavigate ->
             if (shouldNavigate) {
                     findNavController().navigate(R.id.action_gameFragment_to_resultFragment)
             }
         }
-
         // Set up submit button click listener
-        binding.rollButton?.setOnClickListener {
+        binding.rollButton.setOnClickListener {
             viewModel.handleRoll()
             animateRolledDice(viewModel.dice.value ?: emptyList())
         }
-
         // Set up the next button click listener
-        binding.nextButton?.setOnClickListener {
+        binding.nextButton.setOnClickListener {
             if (viewModel.showFinish.value == true) {
                 viewModel.handleFinish()
             } else {
@@ -127,6 +122,11 @@ class GameFragment : Fragment() {
 
     }
 
+    /**
+     * Update the images of the dice based on the current state of the dice.
+     *
+     * @param dice The list of dice to be updated.
+     */
     private fun updateDiceImages(dice: List<Die>) {
         val diceImages = listOf(
             binding.die1Image,
@@ -136,26 +136,34 @@ class GameFragment : Fragment() {
             binding.die5Image,
             binding.die6Image
         )
-
-        dice.forEachIndexed { index, die ->
-            val dieImageView = diceImages[index]
-            val imageResId = getImageResId(die.value)
-
-            dieImageView.setImageResource(imageResId)
-            dieImageView.alpha = if (die.selected) 0.5f else 1.0f
-
-            dieImageView.setOnClickListener {
-                if (dieSelectionEnabled) {
-                    viewModel.toggleSelected(index)
-                }else {
-                    Toast.makeText(requireContext(),
-                        "You must roll the dice before selecting!",
-                        Toast.LENGTH_SHORT).show()
+        //  Update the dice images
+        for ((index, die) in dice.withIndex()) {
+            diceImages[index].apply {
+                setImageResource(getImageResId(die.value))
+                // Change opacity of selected dice
+                alpha = if (die.selected) 0.5f else 1.0f
+                // Set click listener for selected dice
+                setOnClickListener {
+                    if (dieSelectionEnabled) {
+                        viewModel.toggleSelected(index)
+                    } else {
+                        // The user must make the initial roll before selecting
+                        Toast.makeText(
+                            requireContext(),
+                            "You must roll the dice before selecting!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
     }
 
+    /**
+     * Animate the roll of the dice.
+     *
+     * @param dice The list of dice to be animated.
+     */
     private fun animateRolledDice(dice: List<Die>) {
         val diceImages = listOf(
             binding.die1Image,
@@ -166,23 +174,29 @@ class GameFragment : Fragment() {
             binding.die6Image
         )
 
-        dice.forEachIndexed { index, die ->
-            if (die.selected) return@forEachIndexed
-
+        for ((index, die) in dice.withIndex()) {
+            // Skip the selected dice
+            if (die.selected) continue
             val dieImageView = diceImages[index]
             val imageResId = getImageResId(die.value)
-
-            val rotation = ObjectAnimator.ofFloat(dieImageView, "rotation", 0f, 360f)
-            rotation.duration = 300
-            rotation.addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationStart(animation: Animator) {
-                    dieImageView.setImageResource(imageResId)
-                }
-            })
-            rotation.start()
+            // Animate a full rotation of the die
+            ObjectAnimator.ofFloat(dieImageView, "rotation", 0f, 360f).apply {
+                duration = 300
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationStart(animation: Animator) {
+                        dieImageView.setImageResource(imageResId)
+                    }
+                })
+                start()
+            }
         }
     }
-
+    /**
+     * Get the resource ID for the image of a die based on its value.
+     *
+     * @param value The value of the die.
+     * @return The resource ID of the image.
+     */
     private fun getImageResId(value: Int): Int {
         return when (value) {
             1 -> R.drawable.die_1
@@ -194,9 +208,8 @@ class GameFragment : Fragment() {
             else -> R.drawable.die_1
         }
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null // Prevent memory leaks
+        _binding = null
     }
 }

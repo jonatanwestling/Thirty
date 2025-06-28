@@ -16,8 +16,7 @@
         android:rowCount="2"
         android:useDefaultMargins="true"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/topContainer"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
@@ -59,28 +58,127 @@
     </GridLayout>
 
     <LinearLayout
-        android:id="@+id/bottomContainer"
-        android:layout_width="334dp"
-        android:layout_height="100dp"
-        android:layout_marginEnd="8dp"
+        android:id="@+id/topContainer"
+        android:layout_width="263dp"
+        android:layout_height="248dp"
+        android:background="?attr/selectableItemBackground"
+        android:elevation="4dp"
         android:gravity="center"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.8">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/RoundText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/round"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/RoundNum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="1/10"
+                android:textSize="24sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/RollText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/roll"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/RollNum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="0/3"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/ScoreText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/score"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/ScoreNum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="0"
+                android:textSize="18sp" />
+
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/scoreSpinner"
-            android:layout_width="134dp"
-            android:layout_height="66dp"
-            android:layout_marginEnd="16dp"
-            android:entries="@array/score_options" />
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintWidth_percent="0.5" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.9">
 
         <Button
-            android:id="@+id/submitScoreButton"
-            android:layout_width="124dp"
+            android:id="@+id/rollButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
             android:text="@string/roll" />
+
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/next" />
+
     </LinearLayout>
 
 

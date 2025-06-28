@@ -17,18 +17,32 @@ class ScoreBoard() : Parcelable {
         }
     }
 
+    /**
+     * Adds a score for a given choice
+     *
+     * @param choice, the choice to add the score for
+     * @param score, the score to add
+     */
     fun addScore(choice: String, score: Int) {
-        Log.d("ScoreBoard", "Adding score for choice: $choice, score: $score")
+        //Log.d("ScoreBoard", "Adding score for choice: $choice, score: $score")
         scores.add(choice to score)
     }
 
+    /**
+     * Get all scores
+     *
+     * @return List of pairs with choice and score
+     */
     fun getScores(): List<Pair<String, Int>> {
         Log.d("ScoreBoard", "Getting scores: $scores")
         return scores.toList()
     }
 
-    fun getScoreForRound(round: Int): Pair<String, Int> = scores[round]
-
+    /**
+     * Get the total score of the whole game
+     *
+     * @return The total score
+     */
     fun getTotalScore(): Int = scores.sumOf { it.second }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

@@ -25,8 +25,8 @@ class ResultFragment: Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // Get the shared viewmodel
         val viewModel : GameViewModel by activityViewModels()
-        // Initialize UI components
         val startButton: View = view.findViewById(R.id.start_button)
         startButton.setOnClickListener {
             // Navigate to the main menu and clear the back stack
@@ -40,25 +40,23 @@ class ResultFragment: Fragment() {
             viewModel.gameOver();
 
         }
-
-        // call the viewmodel to get the data here
-        val scoreList = viewModel.getRoundResults();
+        // Add the bindings to lists for easier setup
         val choiceTextViews = listOf(
             binding.choice1, binding.choice2, binding.choice3, binding.choice4, binding.choice5,
             binding.choice6, binding.choice7, binding.choice8, binding.choice9, binding.choice10
         )
-
         val scoreTextViews = listOf(
             binding.score1, binding.score2, binding.score3, binding.score4, binding.score5,
             binding.score6, binding.score7, binding.score8, binding.score9, binding.score10
         )
-
+        // Call the viewmodel to get the data here
+        val scoreList = viewModel.getRoundResults();
+        // Populate the lists with the data
         for (i in scoreList.indices) {
             val (choice, score) = scoreList[i]
             choiceTextViews[i].text = choice
             scoreTextViews[i].text = score.toString()
         }
-
         // Fill in total score
         binding.totalScore.text = viewModel.getTotalScore().toString()
 

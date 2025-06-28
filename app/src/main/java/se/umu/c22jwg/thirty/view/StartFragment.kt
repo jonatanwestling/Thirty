@@ -17,7 +17,6 @@ class StartFragment: Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // Initialize UI components
         val startButton: View = view.findViewById(R.id.start_button)
         startButton.setOnClickListener {
             // Navigate to the game fragment
