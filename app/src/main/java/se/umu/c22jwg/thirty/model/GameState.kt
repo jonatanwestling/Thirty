@@ -19,6 +19,7 @@ data class GameState(
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
+        // Deprecated but we need them
         dieSet = parcel.readParcelable(DieSet::class.java.classLoader) ?: DieSet(),
         scoreBoard = parcel.readParcelable(ScoreBoard::class.java.classLoader) ?: ScoreBoard(),
         currentRound = parcel.readInt(),
@@ -60,7 +61,10 @@ data class GameState(
         }
     }
 
-    // Helper functions for state transitions
+    /**
+     * This method is used to create a copy of the current GameState object
+     * such
+     */
     fun copyWith(
         dieSet: DieSet = this.dieSet,
         scoreBoard: ScoreBoard = this.scoreBoard,
