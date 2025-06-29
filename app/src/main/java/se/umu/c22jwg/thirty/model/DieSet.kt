@@ -11,11 +11,6 @@ class DieSet() : Parcelable {
     val getDiceSet: List<Die>
         get() = diceSet
 
-    // Get the current values of the dice set
-    fun getValues(): List<Int> {
-        return diceSet.map { it.value }
-    }
-
     // Roll all the dice in the set
     fun rollDice(){
         for (die in diceSet){

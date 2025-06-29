@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.NavOptions
+import androidx.activity.OnBackPressedCallback
 import se.umu.c22jwg.thirty.R
 import se.umu.c22jwg.thirty.databinding.FragmentResultBinding
 import se.umu.c22jwg.thirty.viewmodel.GameViewModel
@@ -60,6 +61,20 @@ class ResultFragment: Fragment() {
         // Fill in total score
         binding.totalScore.text = viewModel.getTotalScore().toString()
 
-
+        // Dont let the user to press back to come back to the game
+        val backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                viewModel.gameOver()
+                findNavController().navigate(
+                    R.id.action_resultFragment_to_startFragment2,
+                    null,
+                    // Clear the back stack
+                    NavOptions.Builder()
+                        .setPopUpTo(R.id.startFragment, inclusive = true)
+                        .build()
+                )
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
     }
 }

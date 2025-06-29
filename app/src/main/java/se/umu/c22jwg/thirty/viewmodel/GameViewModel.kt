@@ -11,15 +11,13 @@ import androidx.lifecycle.map
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     
     private val _gameState = MutableLiveData<GameState>()
-    val gameState: LiveData<GameState> = _gameState
-    
+
     // Init the game state from saved state or create a new one
     init {
         val savedState = state.get<GameState>("gameState")
         _gameState.value = savedState ?: GameState()
     }
-    
-    // LiveData for the UI to observe
+    // Expose the game state as LiveData with transformations for UI binding
     val dice = _gameState.map { it.dieSet.getDiceSet }
     val round = _gameState.map { it.currentRound }
     val roll = _gameState.map { it.currentRoll }
@@ -30,6 +28,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     val navigateToResult = _gameState.map { it.navigateToResult }
     val remainingChoices = _gameState.map { it.remainingChoices }
     val isDieSelectionEnabled = _gameState.map { it.isDieSelectionEnabled }
+    val selectedChoice = _gameState.map { it.selectedChoice }
 
     /**
      * Update and save the new game state in the SavedStateHandle.
@@ -55,7 +54,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             if (currentRoll == 0) {
                 // Roll all dice
                 newDieSet.rollDice()
-                val updatedState = currentState.copyWith(
+                val updatedState = currentState.copy(
                     dieSet = newDieSet,
                     currentRoll = 1,
                     isDieSelectionEnabled = true
@@ -68,7 +67,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
                 } else {
                     newDieSet.rollDice()
                 }
-                val updatedState = currentState.copyWith(
+                val updatedState = currentState.copy(
                     dieSet = newDieSet,
                     currentRoll = currentRoll + 1
                 )
@@ -82,7 +81,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             } else {
                 newDieSet.rollDice()
             }
-            val updatedState = currentState.copyWith(
+            val updatedState = currentState.copy(
                 dieSet = newDieSet,
                 currentRoll = currentRoll + 1,
                 rollButtonEnabled = false
@@ -108,7 +107,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         val currentRound = currentState.currentRound
         val newRound = if (currentRound < 10) currentRound + 1 else 1
         // Update the state for the next round
-        val updatedState = currentState.copyWith(
+        val updatedState = currentState.copy(
             scoreBoard = newScoreBoard,
             remainingChoices = newRemainingChoices,
             currentRound = newRound,
@@ -137,9 +136,9 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             return
         }
         Log.d("GameViewModel", "Selected choice: $choice")
-        val calculatedScore = calculateScore(currentState.copyWith(selectedChoice = choice))
+        val calculatedScore = calculateScore(currentState.copy(selectedChoice = choice))
         
-        val updatedState = currentState.copyWith(
+        val updatedState = currentState.copy(
             selectedChoice = choice,
             currentScore = if (calculatedScore == -1)  0 else calculatedScore,
             nextButtonEnabled = calculatedScore >= 0
@@ -157,8 +156,8 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         val newDieSet = currentState.dieSet
         newDieSet.toggleSelected(index)
         // Update the score
-        val calculatedScore = calculateScore(currentState.copyWith(dieSet = newDieSet))
-        val updatedState = currentState.copyWith(
+        val calculatedScore = calculateScore(currentState.copy(dieSet = newDieSet))
+        val updatedState = currentState.copy(
             dieSet = newDieSet,
             currentScore = if (calculatedScore == -1)  0 else calculatedScore,
             nextButtonEnabled = calculatedScore >= 0
@@ -176,7 +175,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         val newScoreBoard = currentState.scoreBoard
         newScoreBoard.addScore(currentState.selectedChoice, currentState.currentScore)
         
-        val updatedState = currentState.copyWith(
+        val updatedState = currentState.copy(
             scoreBoard = newScoreBoard,
             navigateToResult = true
         )
@@ -202,7 +201,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
      * Calculate the low score, the sum of all dice with a value less than 4.
      *
      * @param dieSet, the set of dice to be used in the calculation
-     * @return The score if valid, null otherwise
+     * @return The score if valid, -1 otherwise
      */
     private fun getLowScore(dieSet: DieSet): Int {
         var score = 0
@@ -229,14 +228,17 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
      * @return true if a valid combination is found, false otherwise
      */
     fun findCombination(current: MutableList<Int>, remaining: MutableList<Int>, target: Int): Boolean {
+        // Base cases
         if (target == 0) return true
         if (target < 0 || remaining.isEmpty()) return false
-
+        // Iterate through remaining values
         for (i in remaining.indices) {
             val value = remaining[i]
             val newRemaining = remaining.toMutableList()
+            // Remove the current value from the remaining list
             newRemaining.removeAt(i)
             current.add(value)
+            // Look for a valid combination
             if (findCombination(current, newRemaining, target - value)) {
                 return true
             }

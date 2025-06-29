@@ -19,7 +19,7 @@ data class GameState(
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
-        // Deprecated but we need them
+        // Deprecated but needed for API 28...
         dieSet = parcel.readParcelable(DieSet::class.java.classLoader) ?: DieSet(),
         scoreBoard = parcel.readParcelable(ScoreBoard::class.java.classLoader) ?: ScoreBoard(),
         currentRound = parcel.readInt(),
@@ -60,44 +60,4 @@ data class GameState(
             return arrayOfNulls(size)
         }
     }
-
-    /**
-     * This method is used to create a copy of the current GameState object
-     * such
-     */
-    fun copyWith(
-        dieSet: DieSet = this.dieSet,
-        scoreBoard: ScoreBoard = this.scoreBoard,
-        currentRound: Int = this.currentRound,
-        currentRoll: Int = this.currentRoll,
-        currentScore: Int = this.currentScore,
-        rollButtonEnabled: Boolean = this.rollButtonEnabled,
-        nextButtonEnabled: Boolean = this.nextButtonEnabled,
-        showFinish: Boolean = this.showFinish,
-        navigateToResult: Boolean = this.navigateToResult,
-        remainingChoices: MutableList<String> = this.remainingChoices,
-        selectedChoice: String = this.selectedChoice,
-        isDieSelectionEnabled: Boolean = this.isDieSelectionEnabled
-    ): GameState {
-        return copy(
-            dieSet = dieSet,
-            scoreBoard = scoreBoard,
-            currentRound = currentRound,
-            currentRoll = currentRoll,
-            currentScore = currentScore,
-            rollButtonEnabled = rollButtonEnabled,
-            nextButtonEnabled = nextButtonEnabled,
-            showFinish = showFinish,
-            navigateToResult = navigateToResult,
-            remainingChoices = remainingChoices,
-            selectedChoice = selectedChoice,
-            isDieSelectionEnabled = isDieSelectionEnabled
-        )
-    }
-
-    fun isGameOver(): Boolean = currentRound > 10
-
-    fun canRoll(): Boolean = currentRoll < 3 && rollButtonEnabled
-
-    fun shouldShowFinish(): Boolean = currentRound == 10 && showFinish
-} 
+}

@@ -7,26 +7,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Adapter
 import android.widget.AdapterView
-import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Observer
-import androidx.lifecycle.observe
 import se.umu.c22jwg.thirty.R
 import se.umu.c22jwg.thirty.databinding.FragmentGameBinding
 import se.umu.c22jwg.thirty.model.Die
 import se.umu.c22jwg.thirty.viewmodel.GameViewModel
 import androidx.navigation.fragment.findNavController
+import androidx.activity.addCallback
 
 class GameFragment : Fragment() {
     private var _binding: FragmentGameBinding? = null
     private val binding get() = _binding!!
     private val viewModel: GameViewModel by activityViewModels()
-    var dieSelectionEnabled = false
     private var isUpdatingSpinner = false // Flag to prevent listener firing during updates
 
     override fun onCreateView(
@@ -39,20 +35,25 @@ class GameFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Observe dice changes
+        // Handle back button press
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            // Call gameOver to reset the game state
+            viewModel.gameOver()
+            // Navigate back to start fragment
+            findNavController().navigate(R.id.action_gameFragment_to_startFragment)
+        }
+        /**
+         * Observe the LiveData changes from the ViewModel
+         */
         viewModel.dice.observe(viewLifecycleOwner) { diceList ->
             updateDiceImages(diceList)
         }
-        // Observe round changes
         viewModel.round.observe(viewLifecycleOwner) { round ->
             binding.RoundNum.text = getString(R.string.round_text, round);
         }
-        // Observe roll changes
         viewModel.roll.observe(viewLifecycleOwner) { roll ->
             binding.RollNum.text = getString(R.string.roll_text, roll);
         }
-        // Observe score changes
         viewModel.score.observe(viewLifecycleOwner) { score ->
             binding.ScoreNum.text = "$score"
         }
@@ -63,7 +64,7 @@ class GameFragment : Fragment() {
             binding.nextButton.isEnabled = enabled
         }
         viewModel.isDieSelectionEnabled.observe(viewLifecycleOwner) {
-            dieSelectionEnabled = it
+            updateDiceImages(viewModel.dice.value ?: emptyList())
         }
         viewModel.showFinish.observe(viewLifecycleOwner) { show ->
             if (show) {
@@ -74,20 +75,27 @@ class GameFragment : Fragment() {
         }
         viewModel.remainingChoices.observe(viewLifecycleOwner) { choices ->
             isUpdatingSpinner = true
+            // New adapter with updated choices
             val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, choices)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.scoreSpinner.adapter = adapter
-            
-            // Set the spinner to show the currently selected choice
-            val currentChoice = viewModel.gameState.value?.selectedChoice
-            if (currentChoice != null && choices.contains(currentChoice)) {
-                val position = choices.indexOf(currentChoice)
-                binding.scoreSpinner.setSelection(position)
-            }
-            
             isUpdatingSpinner = false
         }
-        // Observe navigation event
+
+        viewModel.selectedChoice.observe(viewLifecycleOwner) { selectedChoice ->
+            // Update the spinner, avoid infinite loop
+            if (selectedChoice != null && !isUpdatingSpinner) {
+                isUpdatingSpinner = true
+                // Get the remaining choices
+                val choices = viewModel.remainingChoices.value ?: emptyList()
+                // Set the selected choice
+                if (choices.contains(selectedChoice)) {
+                    val position = choices.indexOf(selectedChoice)
+                    binding.scoreSpinner.setSelection(position)
+                }
+                isUpdatingSpinner = false
+            }
+        }
         viewModel.navigateToResult.observe(viewLifecycleOwner) { shouldNavigate ->
             if (shouldNavigate) {
                     findNavController().navigate(R.id.action_gameFragment_to_resultFragment)
@@ -106,28 +114,28 @@ class GameFragment : Fragment() {
                 viewModel.handleNext()
             }
         }
-
         // Update the viewmodel when the spinner item has changed
         binding.scoreSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                // Only process if we're not programmatically updating the spinner
+                // Only update the viewmodel if it was the user who changed the value
                 if (!isUpdatingSpinner) {
                     val selectedChoice = parent.getItemAtPosition(position).toString()
                     viewModel.onSpinnerChoiceChanged(selectedChoice)
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {
+                //Not possible i think?
             }
         }
 
     }
-
     /**
      * Update the images of the dice based on the current state of the dice.
      *
      * @param dice The list of dice to be updated.
      */
     private fun updateDiceImages(dice: List<Die>) {
+        val selectionEnabled = viewModel.isDieSelectionEnabled.value ?: false
         val diceImages = listOf(
             binding.die1Image,
             binding.die2Image,
@@ -140,11 +148,16 @@ class GameFragment : Fragment() {
         for ((index, die) in dice.withIndex()) {
             diceImages[index].apply {
                 setImageResource(getImageResId(die.value))
-                // Change opacity of selected dice
-                alpha = if (die.selected) 0.5f else 1.0f
+                // Change opacity if selection is enabeled or the die is selected
+                alpha = when {
+                    !selectionEnabled -> 0.1f
+                    die.selected -> 0.5f
+                    else -> 1.0f
+                }
                 // Set click listener for selected dice
                 setOnClickListener {
-                    if (dieSelectionEnabled) {
+
+                    if (selectionEnabled) {
                         viewModel.toggleSelected(index)
                     } else {
                         // The user must make the initial roll before selecting

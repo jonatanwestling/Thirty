@@ -4,7 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 
 class Die: Parcelable {
-    var value: Int = 1;
+    var value: Int = (1..6).random();
     var selected = false;
 
     fun roll() {
