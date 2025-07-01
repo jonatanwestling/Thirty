@@ -9,13 +9,14 @@ import se.umu.c22jwg.thirty.model.GameState
 import androidx.lifecycle.map
 
 class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
-    
+
     private val _gameState = MutableLiveData<GameState>()
 
     // Init the game state from saved state or create a new one
     init {
         val savedState = state.get<GameState>("gameState")
         _gameState.value = savedState ?: GameState()
+
     }
     // Expose the game state as LiveData with transformations for UI binding
     val dice = _gameState.map { it.dieSet.getDiceSet }
@@ -45,6 +46,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
      * dice and updates the game state.
      */
     fun handleRoll() {
+        testCombinationScore()
         val currentState = _gameState.value ?: return
         val currentRoll = currentState.currentRoll
 
@@ -137,7 +139,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         }
         Log.d("GameViewModel", "Selected choice: $choice")
         val calculatedScore = calculateScore(currentState.copy(selectedChoice = choice))
-        
+
         val updatedState = currentState.copy(
             selectedChoice = choice,
             currentScore = if (calculatedScore == -1)  0 else calculatedScore,
@@ -174,7 +176,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         val currentState = _gameState.value ?: return
         val newScoreBoard = currentState.scoreBoard
         newScoreBoard.addScore(currentState.selectedChoice, currentState.currentScore)
-        
+
         val updatedState = currentState.copy(
             scoreBoard = newScoreBoard,
             navigateToResult = true
@@ -219,44 +221,14 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     }
 
     /**
-     * Recursive helper function to find any combination of in remaining  that sums to target
-     * When a valid combination is found, it is added it gets stored in current.
-     *
-     * @param current, the current combination being built
-     * @param remaining, the remaining values to be used in the combination
-     * @param target, the target sum of the combination
-     * @return true if a valid combination is found, false otherwise
-     */
-    fun findCombination(current: MutableList<Int>, remaining: MutableList<Int>, target: Int): Boolean {
-        // Base cases
-        if (target == 0) return true
-        if (target < 0 || remaining.isEmpty()) return false
-        // Iterate through remaining values
-        for (i in remaining.indices) {
-            val value = remaining[i]
-            val newRemaining = remaining.toMutableList()
-            // Remove the current value from the remaining list
-            newRemaining.removeAt(i)
-            current.add(value)
-            // Look for a valid combination
-            if (findCombination(current, newRemaining, target - value)) {
-                return true
-            }
-            current.removeAt(current.size - 1)
-        }
-        return false
-    }
-
-    /**
-     * Calculates the score based on the selected die combination and
-     * the selected choice. It uses findCombination to find all valid
-     * combinations and adds the score for each valid combination.
+     * Calculates the maximum score possible by grouping dice into non-overlapping combinations
+     * that sum to the given target value.
      *
      * @param dieSet, the set of dice to be used in the calculation
      * @param choice, the selected choice for the calculation
      * @return the calculated score or null if the selection is invalid
      */
-    private fun getCombinationScore(dieSet: DieSet, choice: Int): Int {
+    fun getCombinationScore(dieSet: DieSet, choice: Int): Int {
         // Get the selected dice values
         val selectedValues = dieSet.getDiceSet
             .filter { it.selected }
@@ -264,23 +236,111 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
             .toMutableList()
         // No die selected, 0 points
         if (selectedValues.isEmpty()) return 0
-        var totalScore = 0
-        // Find all valid grouping combinations
-        while (true) {
-            val tempGroup = mutableListOf<Int>()
-            // Add the point each time a combination is found
-            if (findCombination(tempGroup, selectedValues, choice)) {
-                // Remove used values to avoid duplicates
-                tempGroup.forEach { value ->
-                    selectedValues.remove(value)
+        // Get all grouping combinations of the selected dice
+        val allCombos =getAllCombinations(selectedValues,choice)
+        // Pick the combinations with least dice used and highest score
+        val maxScore = findBestCombination(selectedValues, allCombos,choice)
+        // Return the max score if valid
+        return if (maxScore >= 0) maxScore else -1
+    }
+
+    /**
+     * This method gets all possible combinations of the given dice and the target value.
+     * It uses backtracking to generate all possible combinations for the selected dice
+     * that sums to the selected scoring choice. (Instead of the previous approach which
+     * was greedy and picked the first combination that matched the choice)
+     *
+     * @param dice, the list of dice to be used in the calculation
+     * @param choice, the choice selected by the user
+     * @return a list of all possible combinations of the selected dice, the list contain
+     * a list of integers for each combination.
+     */
+    private fun getAllCombinations(dice: List<Int>, choice: Int): List<List<Int>> {
+        // Sort the dice in ascending order
+        val result = mutableListOf<List<Int>>()
+        val sortedDice = dice.sorted()
+
+        // Backtracking function to generate combinations
+        fun backtrack(start: Int, path: MutableList<Int>, sum: Int) {
+            // Add the current combination if it is valid
+            if (sum == choice) {
+                Log.d("GameViewModelComb", "Combination found: $path sum: $sum choice: $choice")
+                result.add(path.toList())
+                return
+            }
+            // Return if the the current sum is bigger
+            if (sum > choice) {
+                Log.d("GameViewModelComb", "Combination not found: $path sum: $sum choice: $choice")
+                return
+            }
+            // Iterate through the sorted dice
+            for (i in start until sortedDice.size) {
+                // Avoid generating duplicate combinations in different orders
+                if (i > start && sortedDice[i] == sortedDice[i - 1]) continue
+                // Add the current die to the path and get the new sum
+                path.add(sortedDice[i])
+                // Recursively generate the next combination
+                backtrack(i + 1, path, sum + sortedDice[i])
+                // Now remove last die to check other combinations
+                path.removeAt(path.lastIndex)
+            }
+            // No combination found
+            return
+        }
+        // Start the backtracking
+        backtrack(0, mutableListOf(), 0)
+        return result
+    }
+
+    /**
+     * This method checks the best combinations by checking that the dice in
+     * the combination are not used in other combinations. It also checks that
+     * the combination is not empty.
+     *
+     * @param dice, the list of dice to be used in the calculation
+     * @param combinations, the list of all possible combinations
+     * @param choice, the choice selected by the user
+     * @return the maximum total score by using non-overlapping combinations
+     */
+    private fun findBestCombination(dice: List<Int>, combinations: List<List<Int>>, choice: Int): Int {
+        var maxScore = -1
+        // Recursively backtrack through the combinations
+        fun backtrack(used: MutableList<Boolean>, count: Int) {
+            var foundCombo = false
+            // Iterate over each found combination
+            for (combo in combinations) {
+                val tempUsed = used.toMutableList()
+                var valid = true
+                // Check that the dice in the combination are not used in other combinations
+                for (dieVal in combo) {
+                    // Find the index of the die in the dice list where it is not used
+                    val index = tempUsed.withIndex().indexOfFirst { (i, isUsed) -> !isUsed && dice[i] == dieVal }
+                    // No index means invalid combination since the die already used
+                    if (index == -1) {
+                        valid = false
+                        break
+                    }
+                    // Mark the die as used
+                    tempUsed[index] = true
                 }
-                totalScore += choice
-            } else {
-                break
+                // If the combination is valid, check if it is the best combination
+                if (valid) {
+                    foundCombo = true
+                    backtrack(tempUsed, count + 1)
+                }
+            }
+            //If no more valid combos to add, check if al dice are used and update max score
+            if (!foundCombo) {
+                val usedCount = used.count { it }
+                if (usedCount == dice.size && count > 0) {
+                    // Save the highest score, either the previous or the current combination
+                    maxScore = maxOf(maxScore, count * choice)
+                }
             }
         }
-        // Return points if valid and no remaining dice
-        return if (selectedValues.isEmpty() && totalScore > 0) totalScore else -1
+        // Start the backtracking, with no dice used and  no groups
+        backtrack(MutableList(dice.size) { false }, 0)
+        return maxScore
     }
 
     /**
@@ -316,5 +376,21 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     fun gameOver() {
         val resetState = GameState()
         updateGameState(resetState)
+    }
+
+    /**
+     * Function to test the getCombinationScore function
+     */
+    fun testCombinationScore() {
+        val testDieSet = DieSet()
+        val values = listOf(1, 1, 3, 5, 5, 5)
+
+        for ((i, die) in testDieSet.getDiceSet.withIndex()) {
+            die.value = values[i]
+            die.selected = true
+        }
+
+        val score = getCombinationScore(testDieSet, 10)
+        Log.d("GameViewModelComb", "Score: $score")
     }
 }
