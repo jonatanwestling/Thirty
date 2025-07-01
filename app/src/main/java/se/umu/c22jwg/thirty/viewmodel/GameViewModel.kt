@@ -1,6 +1,5 @@
 package se.umu.c22jwg.thirty.viewmodel
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -46,7 +45,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
      * dice and updates the game state.
      */
     fun handleRoll() {
-        testCombinationScore()
+        //testCombinationScore()
         val currentState = _gameState.value ?: return
         val currentRoll = currentState.currentRoll
 
@@ -221,12 +220,11 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     }
 
     /**
-     * Calculates the maximum score possible by grouping dice into non-overlapping combinations
-     * that sum to the given target value.
+     * Calculates the maximum score possible for the selected choice.
      *
      * @param dieSet, the set of dice to be used in the calculation
      * @param choice, the selected choice for the calculation
-     * @return the calculated score or null if the selection is invalid
+     * @return the calculated score or -1 if the selection is invalid
      */
     fun getCombinationScore(dieSet: DieSet, choice: Int): Int {
         // Get the selected dice values
@@ -238,7 +236,7 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
         if (selectedValues.isEmpty()) return 0
         // Get all grouping combinations of the selected dice
         val allCombos =getAllCombinations(selectedValues,choice)
-        // Pick the combinations with least dice used and highest score
+        // Pick the combinationes with least dice used and highest score
         val maxScore = findBestCombination(selectedValues, allCombos,choice)
         // Return the max score if valid
         return if (maxScore >= 0) maxScore else -1
@@ -247,13 +245,11 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     /**
      * This method gets all possible combinations of the given dice and the target value.
      * It uses backtracking to generate all possible combinations for the selected dice
-     * that sums to the selected scoring choice. (Instead of the previous approach which
-     * was greedy and picked the first combination that matched the choice)
+     * that sums to the selected scoring choice.
      *
      * @param dice, the list of dice to be used in the calculation
      * @param choice, the choice selected by the user
-     * @return a list of all possible combinations of the selected dice, the list contain
-     * a list of integers for each combination.
+     * @return  a list of all valid combinations where each combination is a list of dice values
      */
     private fun getAllCombinations(dice: List<Int>, choice: Int): List<List<Int>> {
         // Sort the dice in ascending order
@@ -293,14 +289,14 @@ class GameViewModel(private val state: SavedStateHandle) : ViewModel() {
     }
 
     /**
-     * This method checks the best combinations by checking that the dice in
-     * the combination are not used in other combinations. It also checks that
-     * the combination is not empty.
+     * Finds the maximum total score by selecting combinations that dont overlap from the list.
+     * Each combination uses distinct dice by tracking which dice indices are already used.
+     * This ensures that even if dice values are the same, dice are only used once per combination.
      *
      * @param dice, the list of dice to be used in the calculation
      * @param combinations, the list of all possible combinations
      * @param choice, the choice selected by the user
-     * @return the maximum total score by using non-overlapping combinations
+     * @return the maximum total score by using combinations that dont overlap
      */
     private fun findBestCombination(dice: List<Int>, combinations: List<List<Int>>, choice: Int): Int {
         var maxScore = -1
