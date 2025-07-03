@@ -8,7 +8,7 @@ Thirty is a dice game where players try to score as many points as possible by r
 
 ## How to Play
 
-- The game is played over 6 rounds.
+- The game is 10 rounds.
 - In each round, you roll 6 dice.
 - You can re-roll any number of dice up to two times per round.
 - After rolling, select combinations of dice that sum up to the round's target number (e.g., 6, 7, 8, 9, 10, 11, or 12).
@@ -27,8 +27,11 @@ Thirty is a dice game where players try to score as many points as possible by r
 ![Start Screen](screenshots/Screenshot1.png)
 
 ### Game Screen
-![Game Screen](screenshots/Screenshot2.png)
-![Result Screen](screenshots/Screenshot3.png)
+![Game Screen1](screenshots/Screenshot2.png)
+![Game Screen2](screenshots/Screenshot3.png)
+
+### Result screen
+![Result Screen](screenshots/Screenshot4.png)
 
 ## Installation
 
@@ -41,4 +44,4 @@ Thirty is a dice game where players try to score as many points as possible by r
 
 ## Credits
 
-Developed by [Your Name]. 
+Developed by Jonatan Westling. 
