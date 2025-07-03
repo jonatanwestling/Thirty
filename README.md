@@ -44,7 +44,7 @@ Thirty is a dice game where players try to score as many points as possible by r
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/thirty.git
+   git clone https://github.com/jonatanwestling/thirty.git
    ```
 2. Open the project in Android Studio.
 3. Build and run on an emulator or device.
