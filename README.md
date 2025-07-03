@@ -19,19 +19,26 @@ Thirty is a dice game where players try to score as many points as possible by r
 
 - Each die can only be used in one combination per round.
 - You must use all dice to score in a round, or you score zero for unused dice.
-- The game ends after 6 rounds, and the player with the highest score wins.
+- The game ends after 10 rounds and the player will see the score for each round and the total score.
+- The goal is to get the highest score possible.
 
 ## Screenshots
 
 ### Start Screen
-![Start Screen](screenshots/Screenshot1.png)
+<p align="center">
+  <img src="screenshots/Screenshot1.png" alt="Start Screen" width="220"/>
+</p>
 
 ### Game Screen
-![Game Screen1](screenshots/Screenshot2.png)
-![Game Screen2](screenshots/Screenshot3.png)
+<p align="center">
+  <img src="screenshots/Screenshot2.png" alt="Game Screen 1" width="220" style="margin-right: 20px;"/>
+  <img src="screenshots/Screenshot3.png" alt="Game Screen 2" width="220"/>
+</p>
 
-### Result screen
-![Result Screen](screenshots/Screenshot4.png)
+### Result Screen
+<p align="center">
+  <img src="screenshots/Screenshot4.png" alt="Result Screen" width="220"/>
+</p>
 
 ## Installation
 
